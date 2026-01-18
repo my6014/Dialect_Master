@@ -1,0 +1,182 @@
+import { useState, useRef } from 'react';
+import Link from 'next/link';
+
+export default function AsrTest() {
+    const [file, setFile] = useState(null);
+    const [recording, setRecording] = useState(false);
+    const [result, setResult] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const mediaRecorder = useRef(null);
+    const audioChunks = useRef([]);
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder.current = new MediaRecorder(stream);
+            audioChunks.current = [];
+
+            mediaRecorder.current.ondataavailable = (event) => {
+                audioChunks.current.push(event.data);
+            };
+
+            mediaRecorder.current.onstop = () => {
+                const audioBlob = new Blob(audioChunks.current, { type: 'audio/wav' });
+                const audioFile = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
+                setFile(audioFile);
+            };
+
+            mediaRecorder.current.start();
+            setRecording(true);
+            setError(null);
+        } catch (err) {
+            setError('无法访问麦克风: ' + err.message);
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorder.current && recording) {
+            mediaRecorder.current.stop();
+            setRecording(false);
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!file) return;
+        if (!(file.type || '').startsWith('audio/')) {
+            setError('请上传音频文件');
+            return;
+        }
+        if (file.size > 20 * 1024 * 1024) {
+            setError('文件过大，最大支持20MB');
+            return;
+        }
+        setLoading(true);
+        setError(null);
+        setResult(null);
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('lang', 'auto');
+
+        try {
+            const response = await fetch('http://localhost:8000/sensevoice', {
+                method: 'POST',
+                body: formData,
+            });
+
+            let data;
+            try {
+                data = await response.json();
+            } catch (e) {
+                setError('后端返回的不是有效JSON');
+                return;
+            }
+            if (response.ok) {
+                setResult(data);
+            } else {
+                const msg = data.error || data.message || '上传失败';
+                setError(msg);
+            }
+        } catch (err) {
+            setError('网络请求失败: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="center" style={{ flexDirection: 'column', minHeight: '100vh', padding: '40px 20px' }}>
+            <div className="card fade-in" style={{ maxWidth: 800, width: '100%', padding: '40px' }}>
+                <div style={{ marginBottom: 24 }}>
+                    <Link href="/" style={{ color: 'var(--primary)', textDecoration: 'none', fontSize: '0.9rem' }}>
+                        ← 返回首页
+                    </Link>
+                </div>
+
+                <h1 style={{ fontSize: '2rem', marginBottom: 24, textAlign: 'center' }}>SenseVoice ASR 测试</h1>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                    {/* 录音与上传控制区 */}
+                    <div style={{ display: 'flex', gap: 16, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}>
+                        {!recording ? (
+                            <button onClick={startRecording} className="btn btn-primary" style={{ backgroundColor: '#ef4444' }}>
+                                🎤 开始录音
+                            </button>
+                        ) : (
+                            <button onClick={stopRecording} className="btn btn-primary" style={{ animation: 'pulse 1.5s infinite' }}>
+                                🛑 停止录音
+                            </button>
+                        )}
+
+                        <input
+                            type="file"
+                            accept="audio/*"
+                            onChange={(e) => setFile(e.target.files[0])}
+                            style={{ display: 'none' }}
+                            id="audio-input"
+                        />
+                        <label htmlFor="audio-input" className="btn btn-outline" style={{ cursor: 'pointer' }}>
+                            📁 选择文件
+                        </label>
+
+                        <button
+                            onClick={handleUpload}
+                            className="btn btn-primary"
+                            disabled={!file || loading}
+                            style={{ opacity: !file || loading ? 0.6 : 1 }}
+                        >
+                            {loading ? '🚀 正在识别...' : '📤 开始识别'}
+                        </button>
+                    </div>
+
+                    {/* 当前选择状态 */}
+                    {file && (
+                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                            已选择: <strong>{file.name}</strong> ({(file.size / 1024).toFixed(1)} KB)
+                        </div>
+                    )}
+
+                    {/* 错误提示 */}
+                    {error && (
+                        <div style={{ padding: 16, borderRadius: 12, background: '#fee2e2', color: '#b91c1c', fontSize: '0.9rem' }}>
+                            ❌ 错误: {error}
+                        </div>
+                    )}
+
+                    {/* 结果显示区 */}
+                    {result && (
+                        <div style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 24 }}>
+                            <h2 style={{ fontSize: '1.25rem', marginBottom: 16 }}>识别结果:</h2>
+                            {result.result?.map((item, index) => (
+                                <div key={index} style={{ background: 'var(--bg-card)', padding: 20, borderRadius: 12, border: '1px solid var(--border)', marginBottom: 16 }}>
+                                    <div style={{ fontSize: '1.2rem', marginBottom: 12, lineHeight: 1.6 }}>{item.text}</div>
+                                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                        {item.emotions?.map(e => (
+                                            <span key={e} style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: 20, background: '#e0e7ff', color: '#4338ca' }}>
+                                                😊 {e}
+                                            </span>
+                                        ))}
+                                        {item.events?.map(ev => (
+                                            <span key={ev} style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: 20, background: '#fef3c7', color: '#92400e' }}>
+                                                🔔 {ev}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <style jsx>{`
+        @keyframes pulse {
+          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+          70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+      `}</style>
+        </div>
+    );
+}

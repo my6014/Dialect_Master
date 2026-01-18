@@ -14,7 +14,7 @@ export default function Register() {
     setResult(null);
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8001/register.php', {
+      const res = await fetch('http://localhost:8000/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -89,4 +89,3 @@ export default function Register() {
     </div>
   );
 }
-

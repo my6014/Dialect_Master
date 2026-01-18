@@ -6,7 +6,7 @@ export default function Home() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:8001/hello.php')
+    fetch('http://localhost:8000/hello')
       .then(r => r.json())
       .then(setData)
       .catch(setError);
@@ -21,7 +21,7 @@ export default function Home() {
         <p style={{ color: 'var(--text-muted)', fontSize: '1.125rem', marginBottom: 32 }}>
           探索方言的魅力，连接过去与未来。
           <br />
-          <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>前端: Next.js • 后端: PHP</span>
+          <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>前端: Next.js • 后端: Python (FastAPI)</span>
         </p>
 
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 40 }}>
@@ -54,4 +54,3 @@ export default function Home() {
     </div>
   );
 }
-
