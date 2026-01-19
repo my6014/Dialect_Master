@@ -118,11 +118,12 @@ def login(body: AuthBody):
         conn.close()
 
 @app.post("/sensevoice")
-def sensevoice(file: UploadFile = File(...), lang: str = Form("auto"), keys: Optional[str] = Form(None)):
+async def sensevoice(file: UploadFile = File(...), lang: str = Form("auto"), keys: Optional[str] = Form(None)):
     load_env_local()
     target = os.getenv("PYTHON_ASR_URL", "http://127.0.0.1:50000/api/v1/asr")
     try:
-        files = {"files": (file.filename, file.file, file.content_type or "application/octet-stream")}
+        file_content = await file.read()
+        files = [('files', (file.filename, file_content, file.content_type or "application/octet-stream"))] # Fallback for content type
         data = {"lang": lang}
         if keys:
             data["keys"] = keys
