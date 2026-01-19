@@ -9,10 +9,76 @@ export default function AsrTest() {
     const [error, setError] = useState(null);
     const mediaRecorder = useRef(null);
     const audioChunks = useRef([]);
+    const audioContext = useRef(null);
+
+    // 将音频转换为 WAV 格式
+    const audioBufferToWav = (audioBuffer) => {
+        const numberOfChannels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
+        const format = 1; // PCM
+        const bitDepth = 16;
+
+        const bytesPerSample = bitDepth / 8;
+        const blockAlign = numberOfChannels * bytesPerSample;
+
+        const data = [];
+        for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+            data.push(audioBuffer.getChannelData(i));
+        }
+
+        const interleaved = new Float32Array(audioBuffer.length * numberOfChannels);
+        for (let src = 0; src < audioBuffer.length; src++) {
+            for (let channel = 0; channel < numberOfChannels; channel++) {
+                interleaved[src * numberOfChannels + channel] = data[channel][src];
+            }
+        }
+
+        const dataLength = interleaved.length * bytesPerSample;
+        const buffer = new ArrayBuffer(44 + dataLength);
+        const view = new DataView(buffer);
+
+        const writeString = (offset, string) => {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        };
+
+        // WAV 文件头
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + dataLength, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, format, true);
+        view.setUint16(22, numberOfChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * blockAlign, true);
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, bitDepth, true);
+        writeString(36, 'data');
+        view.setUint32(40, dataLength, true);
+
+        // 写入 PCM 数据
+        const volume = 1;
+        let index = 44;
+        for (let i = 0; i < interleaved.length; i++) {
+            const sample = Math.max(-1, Math.min(1, interleaved[i]));
+            view.setInt16(index, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+            index += 2;
+        }
+
+        return new Blob([buffer], { type: 'audio/wav' });
+    };
 
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            // 初始化 AudioContext
+            if (!audioContext.current) {
+                audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
             mediaRecorder.current = new MediaRecorder(stream);
             audioChunks.current = [];
 
@@ -20,10 +86,27 @@ export default function AsrTest() {
                 audioChunks.current.push(event.data);
             };
 
-            mediaRecorder.current.onstop = () => {
-                const audioBlob = new Blob(audioChunks.current, { type: 'audio/wav' });
-                const audioFile = new File([audioBlob], 'recording.wav', { type: 'audio/wav' });
-                setFile(audioFile);
+            mediaRecorder.current.onstop = async () => {
+                try {
+                    // 创建 blob
+                    const audioBlob = new Blob(audioChunks.current, { type: mediaRecorder.current.mimeType });
+
+                    // 转换为 ArrayBuffer
+                    const arrayBuffer = await audioBlob.arrayBuffer();
+
+                    // 解码音频数据
+                    const audioBuffer = await audioContext.current.decodeAudioData(arrayBuffer);
+
+                    // 转换为 WAV
+                    const wavBlob = audioBufferToWav(audioBuffer);
+                    const audioFile = new File([wavBlob], 'recording.wav', { type: 'audio/wav' });
+
+                    setFile(audioFile);
+                    setError(null);
+                } catch (err) {
+                    setError('音频转换失败: ' + err.message);
+                    console.error('Error converting audio:', err);
+                }
             };
 
             mediaRecorder.current.start();
