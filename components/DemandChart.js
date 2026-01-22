@@ -4,18 +4,18 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
     // Mock data - in real app this would come from API based on filters
     const demandData = [
-        { time: '00:00', maxDemand: 1200, actualDemand: 890 },
-        { time: '02:00', maxDemand: 1200, actualDemand: 750 },
-        { time: '04:00', maxDemand: 1200, actualDemand: 650 },
-        { time: '06:00', maxDemand: 1200, actualDemand: 980 },
-        { time: '08:00', maxDemand: 1200, actualDemand: 1150 },
-        { time: '10:00', maxDemand: 1200, actualDemand: 1080 },
-        { time: '12:00', maxDemand: 1200, actualDemand: 1190 },
-        { time: '14:00', maxDemand: 1200, actualDemand: 1240 },
-        { time: '16:00', maxDemand: 1200, actualDemand: 1180 },
-        { time: '18:00', maxDemand: 1200, actualDemand: 1350 },
-        { time: '20:00', maxDemand: 1200, actualDemand: 1220 },
-        { time: '22:00', maxDemand: 1200, actualDemand: 1010 },
+        { time: '00:00', maxDemand: 100, actualDemand: 45 },
+        { time: '02:00', maxDemand: 100, actualDemand: 38 },
+        { time: '04:00', maxDemand: 100, actualDemand: 32 },
+        { time: '06:00', maxDemand: 100, actualDemand: 48 },
+        { time: '08:00', maxDemand: 100, actualDemand: 65 },
+        { time: '10:00', maxDemand: 100, actualDemand: 72 },
+        { time: '12:00', maxDemand: 100, actualDemand: 68 },
+        { time: '14:00', maxDemand: 100, actualDemand: 75 },
+        { time: '16:00', maxDemand: 100, actualDemand: 82 },
+        { time: '18:00', maxDemand: 100, actualDemand: 88 },
+        { time: '20:00', maxDemand: 100, actualDemand: 92 },
+        { time: '22:00', maxDemand: 100, actualDemand: 85 },
     ];
 
     const CustomTooltip = ({ active, payload, label }) => {
@@ -45,7 +45,7 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
                                 }}
                             />
                             <span style={{ fontSize: '0.875rem' }}>
-                                {pld.dataKey === 'maxDemand' ? 'Max Demand' : 'Actual Demand'}: {pld.value} kW
+                                {pld.dataKey === 'maxDemand' ? '目标进度' : '实际进度'}: {pld.value}%
                             </span>
                         </div>
                     ))}
@@ -58,18 +58,18 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
     // Calculate statistics
     const avgActualDemand = Math.round(demandData.reduce((sum, item) => sum + item.actualDemand, 0) / demandData.length);
     const peakDemand = Math.max(...demandData.map(item => item.actualDemand));
-    const demandEfficiency = Math.round((avgActualDemand / 1200) * 100);
+    const demandEfficiency = Math.round((avgActualDemand / 100) * 100);
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Max vs Actual Demand</CardTitle>
+                <CardTitle>学习进度趋势</CardTitle>
                 <p style={{
                     fontSize: '0.875rem',
                     color: 'var(--text-muted)',
                     marginTop: '0.25rem'
                 }}>
-                    Comparison of peak demand against actual usage over time ({dataMode})
+                    目标进度与实际学习进度对比 ({dataMode})
                 </p>
             </CardHeader>
             <CardContent>
@@ -86,13 +86,13 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
                                 fontWeight: 700,
                                 color: 'var(--text-main)'
                             }}>
-                                {avgActualDemand} kW
+                                {avgActualDemand}%
                             </div>
                             <div style={{
                                 fontSize: '0.75rem',
                                 color: 'var(--text-muted)'
                             }}>
-                                Avg Demand
+                                平均进度
                             </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
@@ -101,13 +101,13 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
                                 fontWeight: 700,
                                 color: 'var(--text-main)'
                             }}>
-                                {peakDemand} kW
+                                {peakDemand}%
                             </div>
                             <div style={{
                                 fontSize: '0.75rem',
                                 color: 'var(--text-muted)'
                             }}>
-                                Peak Demand
+                                最高进度
                             </div>
                         </div>
                         <div style={{ textAlign: 'center' }}>
@@ -122,7 +122,7 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
                                 fontSize: '0.75rem',
                                 color: 'var(--text-muted)'
                             }}>
-                                Efficiency
+                                完成率
                             </div>
                         </div>
                     </div>
@@ -140,7 +140,7 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
                                 <YAxis
                                     stroke="var(--text-muted)"
                                     fontSize={12}
-                                    domain={[0, 1400]}
+                                    domain={[0, 100]}
                                 />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Legend />
@@ -150,7 +150,7 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
                                     stroke="#ef4444"
                                     strokeWidth={2}
                                     strokeDasharray="5 5"
-                                    name="Max Demand"
+                                    name="目标进度"
                                     dot={false}
                                 />
                                 <Line
@@ -158,7 +158,7 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
                                     dataKey="actualDemand"
                                     stroke="#22c55e"
                                     strokeWidth={3}
-                                    name="Actual Demand"
+                                    name="实际进度"
                                     dot={{ fill: '#22c55e', strokeWidth: 2, r: 4 }}
                                     activeDot={{ r: 6, stroke: '#22c55e', strokeWidth: 2 }}
                                 />
@@ -173,7 +173,7 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
                             fontWeight: 500,
                             marginBottom: '0.5rem'
                         }}>
-                            Demand Analysis
+                            学习进度分析
                         </h4>
                         <div style={{
                             display: 'flex',
@@ -188,8 +188,8 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
                                 backgroundColor: 'var(--background)',
                                 borderRadius: '0.5rem'
                             }}>
-                                <span style={{ fontSize: '0.875rem' }}>Peak Time</span>
-                                <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>18:00 (1,350 kW)</span>
+                                <span style={{ fontSize: '0.875rem' }}>学习高峰时段</span>
+                                <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>20:00 (92%)</span>
                             </div>
                             <div style={{
                                 display: 'flex',
@@ -199,8 +199,8 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
                                 backgroundColor: 'var(--background)',
                                 borderRadius: '0.5rem'
                             }}>
-                                <span style={{ fontSize: '0.875rem' }}>Low Demand Time</span>
-                                <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>04:00 (650 kW)</span>
+                                <span style={{ fontSize: '0.875rem' }}>学习低谷时段</span>
+                                <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>04:00 (32%)</span>
                             </div>
                             <div style={{
                                 display: 'flex',
@@ -210,8 +210,8 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
                                 backgroundColor: 'var(--background)',
                                 borderRadius: '0.5rem'
                             }}>
-                                <span style={{ fontSize: '0.875rem' }}>Demand Variance</span>
-                                <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>700 kW (58.3%)</span>
+                                <span style={{ fontSize: '0.875rem' }}>进度波动</span>
+                                <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>60% (54个百分点)</span>
                             </div>
                         </div>
                     </div>

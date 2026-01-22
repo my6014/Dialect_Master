@@ -10,11 +10,31 @@
 - **语音引擎**: SenseVoiceSmall (ASR/SER/AED)
 
 ## 目录结构
-- `pages/`: 前端 Next.js 页面 (首页、登录、注册、ASR 测试)
-- `python_api/`: 后端核心逻辑 (API 接口、数据库连接)
+
+### 前端
+- `pages/`: Next.js 页面 (首页、登录、注册、ASR 测试、仪表盘)
+- `components/`: React 组件 (UI 组件、图表组件、侧边栏等)
+- `styles/`: 样式文件
+
+### 后端 (已重构为模块化架构 🎉)
+- `python_api/`: 后端核心逻辑
+  - `main.py`: FastAPI 应用入口
+  - `config.py`: 配置管理
+  - `models/`: 数据模型 (Pydantic schemas)
+  - `routes/`: API 路由层 (health, auth, asr)
+  - `services/`: 业务逻辑层 (auth_service, asr_service)
+  - `database/`: 数据访问层 (数据库连接)
+  - `utils/`: 工具函数 (密码处理等)
+  - `.env.local`: 本地环境配置
+  - `README.md`: 详细的后端文档
+
+### AI 引擎
 - `SenseVoice/`: 语音识别引擎核心 (基于 FunASR)
 - `.venv/`: Python 虚拟环境 (包含所有后端及 AI 依赖)
-- `python_api/.env.local`: 本地环境配置文件 (数据库连接信息)
+
+### 文档
+- `QUICK_START.md`: 快速启动指南
+- `REFACTORING_REPORT.md`: API 重构报告
 
 ## 启动指南
 

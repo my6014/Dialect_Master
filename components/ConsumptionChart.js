@@ -4,12 +4,12 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recha
 export function ConsumptionChart({ selectedDay = 'today', selectedDevice = '' }) {
     // Mock data - in real app this would come from API based on filters
     const consumptionData = [
-        { name: 'Device 1 - Main Building', value: 2400, color: '#22c55e' },
-        { name: 'Device 2 - Manufacturing', value: 4567, color: '#16a34a' },
-        { name: 'Device 3 - Office Block', value: 1890, color: '#15803d' },
-        { name: 'HVAC Systems', value: 3210, color: '#166534' },
-        { name: 'Lighting', value: 1250, color: '#14532d' },
-        { name: 'Equipment', value: 2100, color: '#052e16' },
+        { name: '粤语 - 广州话', value: 45, color: '#22c55e' },
+        { name: '闽南语 - 厦门话', value: 38, color: '#16a34a' },
+        { name: '吴语 - 上海话', value: 32, color: '#15803d' },
+        { name: '客家话 - 梅州话', value: 28, color: '#166534' },
+        { name: '湘语 - 长沙话', value: 22, color: '#14532d' },
+        { name: '赣语 - 南昌话', value: 18, color: '#052e16' },
     ];
 
     const totalConsumption = consumptionData.reduce((sum, item) => sum + item.value, 0);
@@ -28,7 +28,7 @@ export function ConsumptionChart({ selectedDay = 'today', selectedDevice = '' })
                 }}>
                     <p style={{ fontWeight: 500, margin: 0 }}>{data.name}</p>
                     <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>
-                        {data.value.toLocaleString()} kWh ({percentage}%)
+                        {data.value.toLocaleString()} 小时 ({percentage}%)
                     </p>
                 </div>
             );
@@ -70,13 +70,13 @@ export function ConsumptionChart({ selectedDay = 'today', selectedDevice = '' })
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Energy Consumption Overview</CardTitle>
+                <CardTitle>学习时长分布</CardTitle>
                 <p style={{
                     fontSize: '0.875rem',
                     color: 'var(--text-muted)',
                     marginTop: '0.25rem'
                 }}>
-                    Distribution of energy consumption across all live devices for {selectedDay}
+                    {selectedDay} 各方言的学习时长分布情况
                 </p>
             </CardHeader>
             <CardContent>
@@ -94,7 +94,7 @@ export function ConsumptionChart({ selectedDay = 'today', selectedDevice = '' })
                             fontSize: '0.875rem',
                             color: 'var(--text-muted)'
                         }}>
-                            Total kWh consumption
+                            总学习时长（小时）
                         </div>
                     </div>
 
@@ -128,7 +128,7 @@ export function ConsumptionChart({ selectedDay = 'today', selectedDevice = '' })
                             fontWeight: 500,
                             marginBottom: '0.5rem'
                         }}>
-                            Device Status
+                            方言学习状态
                         </h4>
                         <div style={{
                             display: 'flex',
@@ -168,7 +168,7 @@ export function ConsumptionChart({ selectedDay = 'today', selectedDevice = '' })
                                             fontSize: '0.875rem',
                                             fontWeight: 500
                                         }}>
-                                            {device.value.toLocaleString()} kWh
+                                            {device.value.toLocaleString()} 小时
                                         </span>
                                         <div
                                             style={{
