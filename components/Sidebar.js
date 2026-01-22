@@ -6,7 +6,8 @@ import {
     FileText,
     User,
     Zap,
-    X
+    X,
+    Mic
 } from 'lucide-react';
 
 export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
@@ -24,33 +25,39 @@ export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
     const navigationItems = [
         {
             id: 'dashboard',
-            name: 'Dashboard',
+            name: '数据面板',
             icon: LayoutDashboard,
-            description: 'Overview & monitoring'
+            description: '学习概览与监控'
         },
         {
             id: 'analytics',
-            name: 'Analytics',
+            name: '学习分析',
             icon: BarChart3,
-            description: 'Advanced analytics'
+            description: '深度学习分析'
+        },
+        {
+            id: 'asr',
+            name: '语音识别',
+            icon: Mic,
+            description: '方言语音识别测试'
         },
         {
             id: 'configuration',
-            name: 'Configuration',
+            name: '方言配置',
             icon: Settings,
-            description: 'System settings'
+            description: '系统设置'
         },
         {
             id: 'reports',
-            name: 'Reports',
+            name: '学习报告',
             icon: FileText,
-            description: 'Generate reports'
+            description: '生成学习报告'
         },
         {
             id: 'settings',
-            name: 'Settings & Profile',
+            name: '个人设置',
             icon: User,
-            description: 'User preferences'
+            description: '用户偏好设置'
         }
     ];
 
@@ -121,7 +128,7 @@ export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
                                 whiteSpace: 'nowrap',
                                 margin: 0
                             }}>
-                                EMS Control
+                                方言宝
                             </h2>
                             <p style={{
                                 color: 'rgba(255, 255, 255, 0.7)',
@@ -129,7 +136,7 @@ export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
                                 whiteSpace: 'nowrap',
                                 marginTop: '0.25rem'
                             }}>
-                                Energy Management
+                                方言学习平台
                             </p>
                         </div>
                     )}
@@ -306,7 +313,7 @@ export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
                                 cursor: 'pointer',
                                 transition: 'all 0.3s'
                             }}
-                            onClick={() => setIsExpanded(!isExpanded)}
+                            onClick={() => window.location.href = '/login'}
                             onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
                             onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                         >
@@ -314,7 +321,7 @@ export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
                                 color: 'var(--sidebar-primary-foreground)',
                                 fontWeight: 600,
                                 fontSize: '1.125rem'
-                            }}>LG</span>
+                            }}>方</span>
                         </div>
 
                         {/* Profile tooltip for collapsed state */}
@@ -338,8 +345,8 @@ export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
                                     transition: 'all 0.3s'
                                 }}
                             >
-                                <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>Liam Gallagher</div>
-                                <div style={{ fontSize: '0.75rem', opacity: 0.75, marginTop: '0.25rem' }}>System Administrator</div>
+                                <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>方言学习者</div>
+                                <div style={{ fontSize: '0.75rem', opacity: 0.75, marginTop: '0.25rem' }}>高级用户</div>
                                 <div style={{
                                     position: 'absolute',
                                     left: 0,
@@ -368,14 +375,14 @@ export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
                                     fontSize: '0.875rem',
                                     whiteSpace: 'nowrap'
                                 }}>
-                                    Liam Gallagher
+                                    方言学习者
                                 </div>
                                 <div style={{
                                     color: 'rgba(255, 255, 255, 0.7)',
                                     fontSize: '0.75rem',
                                     whiteSpace: 'nowrap'
                                 }}>
-                                    System Administrator
+                                    高级用户
                                 </div>
                             </div>
                         )}

@@ -1,0 +1,6 @@
+"""API 路由包"""
+from .health import router as health_router
+from .auth import router as auth_router
+from .asr import router as asr_router
+
+__all__ = ["health_router", "auth_router", "asr_router"]

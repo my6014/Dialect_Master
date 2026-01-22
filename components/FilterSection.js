@@ -35,7 +35,7 @@ export function FilterSection({
                         marginBottom: '0.5rem',
                         color: 'var(--text-main)'
                     }}>
-                        Filter Type
+                        筛选类型
                     </label>
                     <select
                         className="input"
@@ -49,8 +49,8 @@ export function FilterSection({
                             backgroundColor: 'white'
                         }}
                     >
-                        <option value="device">Individual Device</option>
-                        <option value="virtual-group">Virtual Group</option>
+                        <option value="device">单个方言</option>
+                        <option value="virtual-group">方言组</option>
                     </select>
                 </div>
 
@@ -63,7 +63,7 @@ export function FilterSection({
                         marginBottom: '0.5rem',
                         color: 'var(--text-main)'
                     }}>
-                        Select Device
+                        选择方言
                     </label>
                     <select
                         className="input"
@@ -77,9 +77,9 @@ export function FilterSection({
                             backgroundColor: 'white'
                         }}
                     >
-                        <option value="device-1">Main Building - Floor 1</option>
-                        <option value="device-2">Manufacturing Unit</option>
-                        <option value="device-3">Office Block</option>
+                        <option value="device-1">粤语 - 广州话</option>
+                        <option value="device-2">闽南语 - 厦门话</option>
+                        <option value="device-3">吴语 - 上海话</option>
                     </select>
                 </div>
 
@@ -92,7 +92,7 @@ export function FilterSection({
                         marginBottom: '0.5rem',
                         color: 'var(--text-main)'
                     }}>
-                        Data Mode
+                        数据模式
                     </label>
                     <select
                         className="input"
@@ -106,8 +106,8 @@ export function FilterSection({
                             backgroundColor: 'white'
                         }}
                     >
-                        <option value="real-time">Real-Time</option>
-                        <option value="historical">Historical</option>
+                        <option value="real-time">实时数据</option>
+                        <option value="historical">历史数据</option>
                     </select>
                 </div>
 
@@ -120,7 +120,7 @@ export function FilterSection({
                         marginBottom: '0.5rem',
                         color: 'var(--text-main)'
                     }}>
-                        Time Period
+                        时间范围
                     </label>
                     <select
                         className="input"
@@ -134,10 +134,10 @@ export function FilterSection({
                             backgroundColor: 'white'
                         }}
                     >
-                        <option value="today">Today</option>
-                        <option value="yesterday">Yesterday</option>
-                        <option value="last-7-days">Last 7 Days</option>
-                        <option value="last-30-days">Last 30 Days</option>
+                        <option value="today">今天</option>
+                        <option value="yesterday">昨天</option>
+                        <option value="last-7-days">近 7 天</option>
+                        <option value="last-30-days">近 30 天</option>
                     </select>
                 </div>
 
@@ -166,7 +166,7 @@ export function FilterSection({
                             e.currentTarget.style.boxShadow = 'none';
                         }}
                     >
-                        Apply Filter
+                        应用筛选
                     </button>
                 </div>
             </div>

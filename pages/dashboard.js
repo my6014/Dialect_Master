@@ -32,10 +32,19 @@ export default function Dashboard() {
         }
     };
 
+    const handlePageChange = (pageId) => {
+        // 处理页面切换
+        if (pageId === 'asr') {
+            window.location.href = '/asr_test';
+        } else {
+            setCurrentPage(pageId);
+        }
+    };
+
     return (
         <div className="dashboard-layout">
             {/* Sidebar */}
-            <Sidebar currentPage={currentPage} onPageChange={setCurrentPage} />
+            <Sidebar currentPage={currentPage} onPageChange={handlePageChange} />
 
             {/* Main Content */}
             <div className="dashboard-content">
@@ -54,14 +63,14 @@ export default function Dashboard() {
                                 color: 'var(--text-main)',
                                 margin: 0
                             }}>
-                                Hello, Liam Gallagher! 👋
+                                你好，方言学习者！ 👋
                             </h1>
                             <p style={{
                                 color: 'var(--text-muted)',
                                 marginTop: '0.25rem',
                                 fontSize: '0.875rem'
                             }}>
-                                What are you looking for today?
+                                今天想学习什么方言呢？
                             </p>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -77,7 +86,7 @@ export default function Dashboard() {
                                     backgroundColor: 'white',
                                     borderRadius: '50%'
                                 }} className="animate-pulse" />
-                                Real-time monitoring active
+                                实时监控已激活
                             </Badge>
                         </div>
                     </div>
