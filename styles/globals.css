@@ -40,7 +40,9 @@ a:hover {
   color: var(--primary-hover);
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-weight: 700;
   letter-spacing: -0.025em;
   color: var(--text-main);
@@ -136,6 +138,170 @@ h1, h2, h3 {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================
+   Energy Management System Dashboard Theme
+   ======================================== */
+
+:root {
+  /* Sidebar Colors */
+  --sidebar: #2c5f4e;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #7bdc93;
+  --sidebar-primary-foreground: #2c5f4e;
+  --sidebar-accent: #3a6b5a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #3a6b5a;
+
+  /* Dashboard Colors */
+  --dashboard-bg: #f8faf9;
+  --card-bg: #ffffff;
+  --card-border: rgba(42, 95, 78, 0.1);
+
+  /* Chart Colors */
+  --chart-green-1: #22c55e;
+  --chart-green-2: #16a34a;
+  --chart-green-3: #15803d;
+  --chart-green-4: #166534;
+  --chart-green-5: #14532d;
+  --chart-green-6: #052e16;
+  --chart-red: #ef4444;
+}
+
+/* Dashboard Layout */
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--dashboard-bg);
+}
+
+.dashboard-content {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+/* Sidebar Styles */
+.sidebar {
+  background: linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-accent) 100%);
+  color: var(--sidebar-foreground);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  border-radius: 1.5rem;
+  margin: 1.5rem;
+  overflow: hidden;
+}
+
+.sidebar-collapsed {
+  width: 5rem;
+}
+
+.sidebar-expanded {
+  width: 16rem;
+}
+
+/* Card Styles */
+.energy-card {
+  background: linear-gradient(135deg, var(--sidebar) 0%, var(--sidebar-accent) 50%, var(--sidebar) 100%);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  color: var(--sidebar-foreground);
+}
+
+.energy-card:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Badge Styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.badge-primary {
+  background: linear-gradient(135deg, var(--sidebar-primary) 0%, rgba(123, 220, 147, 0.8) 100%);
+  color: var(--sidebar-primary-foreground);
+}
+
+.badge-secondary {
+  background-color: var(--sidebar-accent);
+  color: var(--sidebar-accent-foreground);
+}
+
+.badge-success {
+  background-color: var(--chart-green-1);
+  color: white;
+}
+
+.badge-destructive {
+  background-color: var(--chart-red);
+  color: white;
+}
+
+/* Animations */
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Utility Classes */
+.gradient-sidebar {
+  background: linear-gradient(135deg, var(--sidebar) 0%, var(--sidebar-accent) 100%);
+}
+
+.gradient-card {
+  background: linear-gradient(135deg, var(--sidebar) 0%, var(--sidebar-accent) 50%, var(--sidebar) 100%);
+}
+
+.text-sidebar {
+  color: var(--sidebar-foreground);
+}
+
+.text-sidebar-muted {
+  color: rgba(255, 255, 255, 0.7);
 }
