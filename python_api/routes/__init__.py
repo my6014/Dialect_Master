@@ -2,5 +2,6 @@
 from .health import router as health_router
 from .auth import router as auth_router
 from .asr import router as asr_router
+from .users import router as users_router
 
-__all__ = ["health_router", "auth_router", "asr_router"]
+__all__ = ["health_router", "auth_router", "asr_router", "users_router"]

@@ -21,14 +21,25 @@ export default function Login() {
         body: JSON.stringify({ username, password }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || '请求失败');
-      } else {
+      // 后端返回 error 字段表示失败
+      if (data.error) {
+        setError(data.error);
+      } else if (data.ok) {
         setResult(data);
+        // 保存登录信息到 localStorage
+        if (data.userId) {
+          localStorage.setItem('userId', String(data.userId));
+        }
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
+        console.log('登录成功，已保存 token:', data.token ? '是' : '否');
         // 登录成功后跳转到 dashboard
         setTimeout(() => {
           window.location.href = '/dashboard';
         }, 1000);
+      } else {
+        setError('登录失败，请重试');
       }
     } catch (err) {
       setError(String(err));

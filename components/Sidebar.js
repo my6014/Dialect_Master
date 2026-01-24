@@ -399,3 +399,7 @@ export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
         </div>
     );
 }
+
+// 默认导出
+export default Sidebar;
+

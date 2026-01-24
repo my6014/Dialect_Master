@@ -32,6 +32,10 @@ class Config:
     # 验证码配置
     CODE_EXPIRE_MINUTES: int = 10  # 验证码有效期（分钟）
     
+    # JWT 配置
+    JWT_SECRET: str = "dialect-master-secret-key-change-in-production"
+    JWT_EXPIRE_HOURS: int = 24 * 7  # Token 有效期（小时）
+    
     @classmethod
     def load_from_env(cls):
         """从环境变量加载配置"""

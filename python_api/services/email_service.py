@@ -7,6 +7,8 @@ import string
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.header import Header
+from email.utils import formataddr
 from datetime import datetime, timedelta, timezone
 from ..config import Config
 from ..database import get_db_connection, ensure_verification_codes_table
@@ -47,8 +49,15 @@ class EmailService:
         try:
             # 创建邮件
             msg = MIMEMultipart('alternative')
-            msg['Subject'] = subject
-            msg['From'] = f"{Config.SMTP_FROM_NAME} <{Config.SMTP_USER}>"
+            msg['Subject'] = Header(subject, 'utf-8')
+            
+            # 按照 QQ 邮箱 RFC2047 标准编码中文发件人名称
+            # 格式: "=?UTF-8?B?base64编码的昵称?=" <邮箱地址>
+            import base64
+            nickname_bytes = Config.SMTP_FROM_NAME.encode('utf-8')
+            nickname_b64 = base64.b64encode(nickname_bytes).decode('ascii')
+            from_header = f'"=?UTF-8?B?{nickname_b64}?=" <{Config.SMTP_USER}>'
+            msg['From'] = from_header
             msg['To'] = to_email
             
             # 添加 HTML 内容

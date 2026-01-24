@@ -5,6 +5,7 @@
 from fastapi import APIRouter
 from ..models import AuthBody, RegisterBody, SendCodeBody, ResetPasswordBody
 from ..services import AuthService, EmailService
+from ..utils import create_access_token
 
 router = APIRouter(tags=["认证"])
 
@@ -32,9 +33,16 @@ def login(body: AuthBody):
         body: 包含用户名和密码的请求体
         
     Returns:
-        登录结果，成功时包含用户ID
+        登录结果，成功时包含用户ID和 JWT token
     """
-    return AuthService.login(body.username, body.password)
+    result = AuthService.login(body.username, body.password)
+    
+    # 如果登录成功，生成 JWT token
+    if result.get("ok") and result.get("userId"):
+        token = create_access_token(result["userId"], body.username)
+        result["token"] = token
+    
+    return result
 
 
 @router.post("/send-code")

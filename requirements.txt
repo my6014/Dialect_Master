@@ -3,6 +3,8 @@ uvicorn[standard]==0.32.0
 psycopg==3.2.1
 requests==2.32.3
 email-validator>=2.0.0
+pyjwt>=2.8.0
+python-multipart>=0.0.6
 torch<=2.3
 torchaudio
 modelscope
