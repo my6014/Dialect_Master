@@ -1,28 +1,80 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Zap, User, Lock, ArrowRight } from 'lucide-react';
+import { Zap, User, Lock, ArrowRight, Mail, Shield } from 'lucide-react';
 
 export default function Register() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [codeSending, setCodeSending] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
+  // 倒计时效果
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  // 发送验证码
+  const sendCode = async () => {
+    if (!email) {
+      setError('请先输入邮箱地址');
+      return;
+    }
+
+    // 简单的邮箱格式验证
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('请输入有效的邮箱地址');
+      return;
+    }
+
+    setCodeSending(true);
+    setError(null);
+
+    try {
+      const res = await fetch('http://localhost:8000/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, purpose: 'register' }),
+      });
+      const data = await res.json();
+
+      if (data.error) {
+        setError(data.error);
+      } else {
+        setCountdown(60); // 60秒倒计时
+        setError(null);
+      }
+    } catch (err) {
+      setError('发送验证码失败，请稍后重试');
+    } finally {
+      setCodeSending(false);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
     setResult(null);
     setLoading(true);
+
     try {
       const res = await fetch('http://localhost:8000/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, email, code }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || '请求失败');
+
+      if (data.error) {
+        setError(data.error);
       } else {
         setResult(data);
         // 注册成功后跳转到登录页面
@@ -35,6 +87,16 @@ export default function Register() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '0.75rem 1rem 0.75rem 3rem',
+    borderRadius: '0.75rem',
+    border: '2px solid #e2e8f0',
+    fontSize: '1rem',
+    transition: 'all 0.2s',
+    outline: 'none'
   };
 
   return (
@@ -130,15 +192,7 @@ export default function Register() {
                   color: '#64748b'
                 }} />
                 <input
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 1rem 0.75rem 3rem',
-                    borderRadius: '0.75rem',
-                    border: '2px solid #e2e8f0',
-                    fontSize: '1rem',
-                    transition: 'all 0.2s',
-                    outline: 'none'
-                  }}
+                  style={inputStyle}
                   placeholder="设置您的用户名"
                   value={username}
                   onChange={e => setUsername(e.target.value)}
@@ -146,6 +200,92 @@ export default function Register() {
                   onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                   required
                 />
+              </div>
+            </div>
+
+            {/* Email Input */}
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: '0.5rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                color: '#2c5f4e'
+              }}>
+                邮箱地址
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Mail size={18} style={{
+                  position: 'absolute',
+                  left: '1rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#64748b'
+                }} />
+                <input
+                  type="email"
+                  style={inputStyle}
+                  placeholder="输入您的邮箱地址"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  onFocus={(e) => e.target.style.borderColor = '#7bdc93'}
+                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Verification Code Input */}
+            <div>
+              <label style={{
+                display: 'block',
+                marginBottom: '0.5rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                color: '#2c5f4e'
+              }}>
+                邮箱验证码
+              </label>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                  <Shield size={18} style={{
+                    position: 'absolute',
+                    left: '1rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#64748b'
+                  }} />
+                  <input
+                    style={inputStyle}
+                    placeholder="输入6位验证码"
+                    value={code}
+                    onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    onFocus={(e) => e.target.style.borderColor = '#7bdc93'}
+                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    required
+                    maxLength={6}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={sendCode}
+                  disabled={codeSending || countdown > 0}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    background: countdown > 0 ? '#e2e8f0' : 'linear-gradient(135deg, #7bdc93 0%, rgba(123, 220, 147, 0.9) 100%)',
+                    color: countdown > 0 ? '#64748b' : '#2c5f4e',
+                    border: 'none',
+                    borderRadius: '0.75rem',
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                    cursor: (codeSending || countdown > 0) ? 'not-allowed' : 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.3s',
+                    minWidth: '100px'
+                  }}
+                >
+                  {codeSending ? '发送中...' : countdown > 0 ? `${countdown}s` : '获取验证码'}
+                </button>
               </div>
             </div>
 
@@ -169,15 +309,7 @@ export default function Register() {
                   color: '#64748b'
                 }} />
                 <input
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem 1rem 0.75rem 3rem',
-                    borderRadius: '0.75rem',
-                    border: '2px solid #e2e8f0',
-                    fontSize: '1rem',
-                    transition: 'all 0.2s',
-                    outline: 'none'
-                  }}
+                  style={inputStyle}
                   placeholder="设置您的密码（至少6位）"
                   type="password"
                   value={password}

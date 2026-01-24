@@ -278,6 +278,13 @@ export default function Login() {
               立即注册
             </Link>
             <span style={{ margin: '0 0.5rem', opacity: 0.3 }}>|</span>
+            <Link href="/forgot-password" style={{
+              color: '#64748b',
+              textDecoration: 'none'
+            }}>
+              忘记密码
+            </Link>
+            <span style={{ margin: '0 0.5rem', opacity: 0.3 }}>|</span>
             <Link href="/" style={{
               color: '#64748b',
               textDecoration: 'none'
