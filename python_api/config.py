@@ -22,6 +22,20 @@ class Config:
     # CORS 配置
     CORS_ORIGINS: list = ["*"]
     
+    # SMTP 邮件配置 (QQ邮箱)
+    SMTP_HOST: str = "smtp.qq.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: Optional[str] = None  # QQ邮箱地址
+    SMTP_PASSWORD: Optional[str] = None  # QQ邮箱授权码（非登录密码）
+    SMTP_FROM_NAME: str = "方言宝"
+    
+    # 验证码配置
+    CODE_EXPIRE_MINUTES: int = 10  # 验证码有效期（分钟）
+    
+    # JWT 配置
+    JWT_SECRET: str = "dialect-master-secret-key-change-in-production"
+    JWT_EXPIRE_HOURS: int = 24 * 7  # Token 有效期（小时）
+    
     @classmethod
     def load_from_env(cls):
         """从环境变量加载配置"""
@@ -33,6 +47,14 @@ class Config:
         cls.DB_USER = os.getenv("DB_USER")
         cls.DB_PASSWORD = os.getenv("DB_PASSWORD", cls.DB_PASSWORD)
         cls.PYTHON_ASR_URL = os.getenv("PYTHON_ASR_URL", cls.PYTHON_ASR_URL)
+        
+        # SMTP 配置
+        cls.SMTP_HOST = os.getenv("SMTP_HOST", cls.SMTP_HOST)
+        cls.SMTP_PORT = int(os.getenv("SMTP_PORT", str(cls.SMTP_PORT)))
+        cls.SMTP_USER = os.getenv("SMTP_USER")
+        cls.SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+        cls.SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", cls.SMTP_FROM_NAME)
+        cls.CODE_EXPIRE_MINUTES = int(os.getenv("CODE_EXPIRE_MINUTES", str(cls.CODE_EXPIRE_MINUTES)))
     
     @staticmethod
     def _load_env_file():
