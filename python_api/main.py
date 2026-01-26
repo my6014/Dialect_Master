@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 from .config import Config
-from .routes import health_router, auth_router, asr_router, users_router
+from .routes import health_router, auth_router, asr_router, users_router, posts_router, comments_router, follows_router
 from .database.migrations import run_migrations
 
 # 创建 FastAPI 应用实例
@@ -36,23 +36,27 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(asr_router)
 app.include_router(users_router)
+app.include_router(posts_router)
+app.include_router(comments_router)
+app.include_router(follows_router)
 
 
 @app.on_event("startup")
 async def startup_event():
     """应用启动时的初始化操作"""
-    print("🚀 方言宝 API 服务启动中...")
-    print(f"📊 数据库: {Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_NAME}")
-    print(f"🎤 ASR 服务: {Config.PYTHON_ASR_URL}")
+    print("[启动] 方言宝 API 服务启动中...")
+    print(f"[数据库] {Config.DB_HOST}:{Config.DB_PORT}/{Config.DB_NAME}")
+    print(f"[ASR] {Config.PYTHON_ASR_URL}")
     
     # 运行数据库迁移
     try:
         run_migrations()
     except Exception as e:
-        print(f"⚠️ 数据库迁移警告: {e}")
+        print(f"[警告] 数据库迁移: {e}")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """应用关闭时的清理操作"""
-    print("👋 方言宝 API 服务已关闭")
+    print("[关闭] 方言宝 API 服务已关闭")
+

@@ -80,10 +80,10 @@ ALTER TABLE users ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
 
 #### 2.2 需要开发的页面
 
-- [ ] 社区首页 (`/community`)
-- [ ] 发布帖子 (`/post/create`)
-- [ ] 帖子详情 (`/post/[id]`)
-- [ ] 方言标签页 (`/dialect/[name]`)
+- [x] 社区首页 (`/community`) ✅ 已完成
+- [x] 发布帖子 (`/post/create`) ✅ 已完成
+- [x] 帖子详情 (`/post/[id]`) ✅ 已完成
+- [x] 方言标签页 (`/dialect/[name]`) ✅ 已完成
 
 #### 2.3 数据库设计
 
@@ -385,21 +385,22 @@ CREATE INDEX idx_notifications_created ON notifications(created_at DESC);
 - [x] 头像上传功能 ✅
 
 ### Phase 2 - 帖子系统
-- [ ] 帖子表创建
-- [ ] 发帖 API
-- [ ] 帖子列表 API（分页）
-- [ ] 社区首页页面
-- [ ] 发帖页面
-- [ ] 帖子详情页面
-- [ ] 方言标签筛选
+- [x] 帖子表创建 ✅
+- [x] 发帖 API ✅
+- [x] 帖子列表 API（分页） ✅
+- [x] 社区首页页面 ✅
+- [x] 发帖页面 ✅
+- [x] 帖子详情页面 ✅
+- [x] 方言标签筛选 ✅
+- [x] 点赞 API（基础版） ✅
 
 ### Phase 3 - 互动系统
-- [ ] 评论表创建
-- [ ] 点赞表创建
-- [ ] 评论 API
-- [ ] 点赞 API
-- [ ] 评论区 UI 组件
-- [ ] 点赞动画
+- [x] 评论表创建 ✅
+- [x] 点赞表创建 ✅
+- [x] 评论 API ✅
+- [x] 点赞 API ✅
+- [x] 评论区 UI 组件 ✅
+- [x] 点赞动画 ✅
 
 ### Phase 4 - 关注系统
 - [ ] 关注表创建

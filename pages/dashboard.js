@@ -1,17 +1,23 @@
 import { useState } from 'react';
+import { useRouter } from 'next/router';
 import { Sidebar } from '../components/Sidebar';
 import { FilterSection } from '../components/FilterSection';
 import { EnergyParameters } from '../components/EnergyParameters';
 import { ConsumptionChart } from '../components/ConsumptionChart';
 import { DemandChart } from '../components/DemandChart';
 import { Badge } from '../components/ui/badge';
+import { useUser } from '../hooks/useUser';
 
 export default function Dashboard() {
+    const router = useRouter();
     const [currentPage, setCurrentPage] = useState('dashboard');
     const [selectedFilterType, setSelectedFilterType] = useState('device');
     const [selectedDevice, setSelectedDevice] = useState('device-1');
     const [dataMode, setDataMode] = useState('real-time');
     const [selectedDay, setSelectedDay] = useState('today');
+
+    // 使用用户 Hook 获取真实用户信息
+    const { user, isAuthenticated, getDisplayName, loading: userLoading } = useUser();
 
     const handleApplyFilters = () => {
         // In a real application, this would trigger data fetching
@@ -35,11 +41,28 @@ export default function Dashboard() {
     const handlePageChange = (pageId) => {
         // 处理页面切换
         if (pageId === 'asr') {
-            window.location.href = '/asr_test';
+            router.push('/asr_test');
+        } else if (pageId === 'community') {
+            router.push('/community');
+        } else if (pageId === 'settings') {
+            router.push('/settings/profile');
         } else {
             setCurrentPage(pageId);
         }
     };
+
+    // 获取问候语
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 6) return '夜深了';
+        if (hour < 12) return '早上好';
+        if (hour < 14) return '中午好';
+        if (hour < 18) return '下午好';
+        return '晚上好';
+    };
+
+    // 获取显示的用户名
+    const displayName = isAuthenticated ? getDisplayName() : '方言学习者';
 
     return (
         <div className="dashboard-layout">
@@ -63,7 +86,7 @@ export default function Dashboard() {
                                 color: 'var(--text-main)',
                                 margin: 0
                             }}>
-                                你好，方言学习者！ 👋
+                                {getGreeting()}，{displayName}！ 👋
                             </h1>
                             <p style={{
                                 color: 'var(--text-muted)',

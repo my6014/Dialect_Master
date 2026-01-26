@@ -18,7 +18,7 @@ def run_migrations():
         migrate_create_likes_table(conn)
         migrate_create_follows_table(conn)
         migrate_create_notifications_table(conn)
-        print("✅ 所有数据库迁移完成")
+        print("[完成] 所有数据库迁移完成")
     finally:
         conn.close()
 
@@ -116,7 +116,7 @@ def migrate_users_profile(conn):
         """
         cur.execute(migration_sql)
         conn.commit()
-        print("✅ 用户资料表迁移完成")
+        print("[完成] 用户资料表迁移完成")
 
 
 def migrate_create_posts_table(conn):
@@ -152,7 +152,7 @@ def migrate_create_posts_table(conn):
         """)
         
         conn.commit()
-        print("✅ 帖子表创建完成")
+        print("[完成] 帖子表创建完成")
 
 
 def migrate_create_comments_table(conn):
@@ -179,7 +179,7 @@ def migrate_create_comments_table(conn):
         """)
         
         conn.commit()
-        print("✅ 评论表创建完成")
+        print("[完成] 评论表创建完成")
 
 
 def migrate_create_likes_table(conn):
@@ -232,7 +232,7 @@ def migrate_create_likes_table(conn):
         """)
         
         conn.commit()
-        print("✅ 点赞表创建完成")
+        print("[完成] 点赞表创建完成")
 
 
 def migrate_create_follows_table(conn):
@@ -258,7 +258,7 @@ def migrate_create_follows_table(conn):
         """)
         
         conn.commit()
-        print("✅ 关注表创建完成")
+        print("[完成] 关注表创建完成")
 
 
 def migrate_create_notifications_table(conn):
@@ -290,7 +290,7 @@ def migrate_create_notifications_table(conn):
         """)
         
         conn.commit()
-        print("✅ 通知表创建完成")
+        print("[完成] 通知表创建完成")
 
 
 if __name__ == "__main__":

@@ -2,273 +2,393 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Sidebar from '../../components/Sidebar';
+import PostCard from '../../components/PostCard';
+
 
 // API 基础 URL
 const API_BASE = 'http://127.0.0.1:8000';
 
 // 等级名称映射
 const LEVEL_NAMES = {
-    1: "方言新手",
-    2: "方言学徒",
-    3: "方言爱好者",
-    4: "方言达人",
-    5: "方言大师",
-    6: "方言宗师"
+  1: "方言新手",
+  2: "方言学徒",
+  3: "方言爱好者",
+  4: "方言达人",
+  5: "方言大师",
+  6: "方言宗师"
 };
 
 // 等级颜色
 const LEVEL_COLORS = {
-    1: "#9CA3AF",
-    2: "#60A5FA",
-    3: "#34D399",
-    4: "#FBBF24",
-    5: "#F472B6",
-    6: "#8B5CF6"
+  1: "#9CA3AF",
+  2: "#60A5FA",
+  3: "#34D399",
+  4: "#FBBF24",
+  5: "#F472B6",
+  6: "#8B5CF6"
 };
 
 export default function UserProfile() {
-    const router = useRouter();
-    const { id } = router.query;
+  const router = useRouter();
+  const { id } = router.query;
 
-    const [user, setUser] = useState(null);
-    const [currentUser, setCurrentUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [isFollowing, setIsFollowing] = useState(false);
-    const [followLoading, setFollowLoading] = useState(false);
 
-    // 获取当前登录用户
-    useEffect(() => {
-        const userId = localStorage.getItem('userId');
+
+  const [user, setUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  // 帖子相关状态
+  const [posts, setPosts] = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+
+  // 获取当前登录用户
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('token');
+    if (userId && token) {
+      setCurrentUser({ id: parseInt(userId), token });
+    }
+  }, []);
+
+  // 获取用户资料
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchUser = async () => {
+      setLoading(true);
+      try {
         const token = localStorage.getItem('token');
-        if (userId && token) {
-            setCurrentUser({ id: parseInt(userId), token });
-        }
-    }, []);
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-    // 获取用户资料
-    useEffect(() => {
-        if (!id) return;
+        const res = await fetch(`${API_BASE}/api/users/${id}`, { headers });
 
-        const fetchUser = async () => {
-            setLoading(true);
-            try {
-                const token = localStorage.getItem('token');
-                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-
-                const res = await fetch(`${API_BASE}/api/users/${id}`, { headers });
-
-                if (!res.ok) {
-                    if (res.status === 404) {
-                        setError('用户不存在');
-                    } else {
-                        setError('获取用户资料失败');
-                    }
-                    return;
-                }
-
-                const data = await res.json();
-                setUser(data);
-                setIsFollowing(data.is_following);
-            } catch (err) {
-                setError('网络错误，请稍后重试');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchUser();
-    }, [id]);
-
-    // 关注/取消关注
-    const handleFollow = async () => {
-        if (!currentUser) {
-            router.push('/login');
-            return;
+        if (!res.ok) {
+          if (res.status === 404) {
+            setError('用户不存在');
+          } else {
+            setError('获取用户资料失败');
+          }
+          return;
         }
 
-        setFollowLoading(true);
-        try {
-            const res = await fetch(`${API_BASE}/api/users/${id}/follow`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${currentUser.token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                setIsFollowing(data.is_following);
-                setUser(prev => ({
-                    ...prev,
-                    followers_count: data.is_following
-                        ? prev.followers_count + 1
-                        : prev.followers_count - 1
-                }));
-            }
-        } catch (err) {
-            console.error('关注操作失败:', err);
-        } finally {
-            setFollowLoading(false);
-        }
+        const data = await res.json();
+        setUser(data);
+        setIsFollowing(data.is_following);
+      } catch (err) {
+        setError('网络错误，请稍后重试');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const isOwnProfile = currentUser && parseInt(id) === currentUser.id;
+    fetchUser();
+  }, [id]);
 
-    if (loading) {
-        return (
-            <div className="profile-container">
-                <Sidebar />
-                <div className="profile-content">
-                    <div className="loading-spinner">
-                        <div className="spinner"></div>
-                        <p>加载中...</p>
-                    </div>
-                </div>
-                <style jsx>{styles}</style>
-            </div>
-        );
+  // 关注/取消关注
+  const handleFollow = async () => {
+    if (!currentUser) {
+      router.push('/login');
+      return;
     }
 
-    if (error) {
-        return (
-            <div className="profile-container">
-                <Sidebar />
-                <div className="profile-content">
-                    <div className="error-message">
-                        <span className="error-icon">😕</span>
-                        <h2>{error}</h2>
-                        <button onClick={() => router.back()}>返回</button>
-                    </div>
-                </div>
-                <style jsx>{styles}</style>
-            </div>
-        );
+    setFollowLoading(true);
+    try {
+      const method = isFollowing ? 'DELETE' : 'POST';
+      const res = await fetch(`${API_BASE}/api/users/${id}/follow`, {
+        method: method,
+        headers: {
+          'Authorization': `Bearer ${currentUser.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const prevIsFollowing = isFollowing;
+        setIsFollowing(data.is_following);
+
+        if (prevIsFollowing !== data.is_following) {
+          setUser(prev => ({
+            ...prev,
+            followers_count: data.is_following
+              ? prev.followers_count + 1
+              : Math.max(0, prev.followers_count - 1)
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('关注操作失败:', err);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  // 获取用户帖子
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchPosts = async () => {
+      setLoadingPosts(true);
+      try {
+        const token = localStorage.getItem('token');
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+        const res = await fetch(`${API_BASE}/api/posts/user/${id}?page=1&page_size=20`, { headers });
+
+        if (res.ok) {
+          const data = await res.json();
+          setPosts(data.posts || []);
+        }
+      } catch (err) {
+        console.error('获取帖子失败:', err);
+      } finally {
+        setLoadingPosts(false);
+      }
+    };
+
+    fetchPosts();
+  }, [id]);
+
+  // 处理点赞
+  const handleLike = async (postId) => {
+    if (!currentUser) {
+      router.push('/login');
+      return;
     }
 
+    try {
+      const res = await fetch(`${API_BASE}/api/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${currentUser.token}`
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+
+        // 更新帖子列表中的点赞状态
+        setPosts(prevPosts => prevPosts.map(post => {
+          if (post.id === postId) {
+            return {
+              ...post,
+              is_liked: data.is_liked,
+              likes_count: data.likes_count
+            };
+          }
+          return post;
+        }));
+      }
+    } catch (err) {
+      console.error('点赞失败:', err);
+    }
+  };
+
+  // 处理删除
+  const handleDelete = async (postId) => {
+    if (!currentUser) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${currentUser.token}`
+        }
+      });
+
+      if (res.ok) {
+        // 从列表中移除
+        setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
+      }
+    } catch (err) {
+      console.error('删除失败:', err);
+    }
+  };
+
+  const isOwnProfile = currentUser && parseInt(id) === currentUser.id;
+
+  if (loading) {
     return (
-        <>
-            <Head>
-                <title>{user?.nickname || user?.username} - 方言宝</title>
-                <meta name="description" content={`${user?.nickname || user?.username} 的个人主页 - 方言宝社区`} />
-            </Head>
+      <div className="profile-container">
+        <Sidebar />
+        <div className="profile-content">
+          <div className="loading-spinner">
+            <div className="spinner"></div>
+            <p>加载中...</p>
+          </div>
+        </div>
+        <style jsx>{styles}</style>
+      </div>
+    );
+  }
 
-            <div className="profile-container">
-                <Sidebar />
+  if (error) {
+    return (
+      <div className="profile-container">
+        <Sidebar />
+        <div className="profile-content">
+          <div className="error-message">
+            <span className="error-icon">😕</span>
+            <h2>{error}</h2>
+            <button onClick={() => router.back()}>返回</button>
+          </div>
+        </div>
+        <style jsx>{styles}</style>
+      </div>
+    );
+  }
 
-                <div className="profile-content">
-                    {/* 用户头部信息 */}
-                    <div className="profile-header">
-                        <div className="avatar-section">
-                            <div className="avatar-wrapper">
-                                {user?.avatar_url ? (
-                                    <img
-                                        src={`${API_BASE}${user.avatar_url}`}
-                                        alt={user.nickname || user.username}
-                                        className="avatar"
-                                    />
-                                ) : (
-                                    <div className="avatar-placeholder">
-                                        {(user?.nickname || user?.username || '?')[0].toUpperCase()}
-                                    </div>
-                                )}
-                                <div
-                                    className="level-badge"
-                                    style={{ backgroundColor: LEVEL_COLORS[user?.level || 1] }}
-                                >
-                                    Lv.{user?.level || 1}
-                                </div>
-                            </div>
-                        </div>
+  return (
+    <>
+      <Head>
+        <title>{user?.nickname || user?.username} - 方言宝</title>
+        <meta name="description" content={`${user?.nickname || user?.username} 的个人主页 - 方言宝社区`} />
+      </Head>
 
-                        <div className="user-info">
-                            <div className="name-row">
-                                <h1 className="nickname">{user?.nickname || user?.username}</h1>
-                                {user?.dialect && (
-                                    <span className="dialect-tag">#{user.dialect}</span>
-                                )}
-                            </div>
+      <div className="profile-container">
+        <Sidebar />
 
-                            <p className="username">@{user?.username}</p>
-
-                            <p className="bio">{user?.bio || '这个人很懒，还没有写简介...'}</p>
-
-                            <div className="meta-info">
-                                {user?.hometown && (
-                                    <span className="meta-item">
-                                        <span className="meta-icon">📍</span>
-                                        {user.hometown}
-                                    </span>
-                                )}
-                                <span className="meta-item">
-                                    <span className="meta-icon">⭐</span>
-                                    {LEVEL_NAMES[user?.level || 1]}
-                                </span>
-                                <span className="meta-item">
-                                    <span className="meta-icon">🏆</span>
-                                    {user?.points || 0} 积分
-                                </span>
-                            </div>
-
-                            <div className="stats-row">
-                                <div className="stat-item">
-                                    <span className="stat-value">{user?.followers_count || 0}</span>
-                                    <span className="stat-label">粉丝</span>
-                                </div>
-                                <div className="stat-item">
-                                    <span className="stat-value">{user?.following_count || 0}</span>
-                                    <span className="stat-label">关注</span>
-                                </div>
-                            </div>
-
-                            <div className="action-buttons">
-                                {isOwnProfile ? (
-                                    <button
-                                        className="btn-edit"
-                                        onClick={() => router.push('/settings/profile')}
-                                    >
-                                        ✏️ 编辑资料
-                                    </button>
-                                ) : (
-                                    <button
-                                        className={`btn-follow ${isFollowing ? 'following' : ''}`}
-                                        onClick={handleFollow}
-                                        disabled={followLoading}
-                                    >
-                                        {followLoading ? '...' : (isFollowing ? '✓ 已关注' : '+ 关注')}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* 用户动态（待实现） */}
-                    <div className="profile-tabs">
-                        <div className="tab active">动态</div>
-                        <div className="tab">喜欢</div>
-                    </div>
-
-                    <div className="posts-section">
-                        <div className="empty-posts">
-                            <span className="empty-icon">📝</span>
-                            <p>暂无动态</p>
-                            {isOwnProfile && (
-                                <button
-                                    className="btn-create-post"
-                                    onClick={() => router.push('/post/create')}
-                                >
-                                    发布第一条动态
-                                </button>
-                            )}
-                        </div>
-                    </div>
+        <div className="profile-content">
+          {/* 用户头部信息 */}
+          <div className="profile-header">
+            <div className="avatar-section">
+              <div className="avatar-wrapper">
+                {user?.avatar_url ? (
+                  <img
+                    src={`${API_BASE}${user.avatar_url}`}
+                    alt={user.nickname || user.username}
+                    className="avatar"
+                  />
+                ) : (
+                  <div className="avatar-placeholder">
+                    {(user?.nickname || user?.username || '?')[0].toUpperCase()}
+                  </div>
+                )}
+                <div
+                  className="level-badge"
+                  style={{ backgroundColor: LEVEL_COLORS[user?.level || 1] }}
+                >
+                  Lv.{user?.level || 1}
                 </div>
+              </div>
             </div>
 
-            <style jsx>{styles}</style>
-        </>
-    );
+            <div className="user-info">
+              <div className="name-row">
+                <h1 className="nickname">{user?.nickname || user?.username}</h1>
+                {user?.dialect && (
+                  <span className="dialect-tag">#{user.dialect}</span>
+                )}
+              </div>
+
+              <p className="username">@{user?.username}</p>
+
+              <p className="bio">{user?.bio || '这个人很懒，还没有写简介...'}</p>
+
+              <div className="meta-info">
+                {user?.hometown && (
+                  <span className="meta-item">
+                    <span className="meta-icon">📍</span>
+                    {user.hometown}
+                  </span>
+                )}
+                <span className="meta-item">
+                  <span className="meta-icon">⭐</span>
+                  {LEVEL_NAMES[user?.level || 1]}
+                </span>
+                <span className="meta-item">
+                  <span className="meta-icon">🏆</span>
+                  {user?.points || 0} 积分
+                </span>
+              </div>
+
+              <div className="stats-row">
+                <div
+                  className="stat-item clickable"
+                  onClick={() => router.push(`/user/${user.id}/followers`)}
+                >
+                  <span className="stat-value">{user?.followers_count || 0}</span>
+                  <span className="stat-label">粉丝</span>
+                </div>
+                <div
+                  className="stat-item clickable"
+                  onClick={() => router.push(`/user/${user.id}/following`)}
+                >
+                  <span className="stat-value">{user?.following_count || 0}</span>
+                  <span className="stat-label">关注</span>
+                </div>
+              </div>
+
+              <div className="action-buttons">
+                {isOwnProfile ? (
+                  <button
+                    className="btn-edit"
+                    onClick={() => router.push('/settings/profile')}
+                  >
+                    ✏️ 编辑资料
+                  </button>
+                ) : (
+                  <button
+                    className={`btn-follow ${isFollowing ? 'following' : ''}`}
+                    onClick={handleFollow}
+                    disabled={followLoading}
+                  >
+                    {followLoading ? '...' : (isFollowing ? '✓ 已关注' : '+ 关注')}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 用户动态（待实现） */}
+          <div className="profile-tabs">
+            <div className="tab active">动态</div>
+            <div className="tab">喜欢</div>
+          </div>
+
+          <div className="posts-section">
+            {loadingPosts ? (
+              <div className="loading-posts">
+                <div className="spinner-small"></div>
+                <span>加载动态中...</span>
+              </div>
+            ) : posts.length > 0 ? (
+              <div className="posts-list">
+                {posts.map(post => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    currentUserId={currentUser?.id}
+                    onLike={handleLike}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="empty-posts">
+                <span className="empty-icon">📝</span>
+                <p>暂无动态</p>
+                {isOwnProfile && (
+                  <button
+                    className="btn-create-post"
+                    onClick={() => router.push('/post/create')}
+                  >
+                    发布第一条动态
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{styles}</style>
+    </>
+  );
 }
 
 const styles = `
@@ -475,6 +595,19 @@ const styles = `
     color: #94a3b8;
   }
 
+  .stat-item.clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .stat-item.clickable:hover {
+    transform: translateY(-2px);
+  }
+
+  .stat-item.clickable:hover .stat-value {
+    text-shadow: 0 0 10px rgba(123, 220, 147, 0.4);
+  }
+
   .action-buttons {
     display: flex;
     gap: 1rem;
@@ -549,6 +682,25 @@ const styles = `
 
   .posts-section {
     min-height: 200px;
+  }
+
+  .loading-posts {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: #94a3b8;
+  }
+
+  .spinner-small {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #2c5f4e;
+    border-top: 3px solid #7bdc93;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 0.5rem;
   }
 
   .empty-posts {
