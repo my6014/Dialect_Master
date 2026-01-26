@@ -1,6 +1,6 @@
 /**
  * 帖子详情页面
- * 显示单个帖子的完整内容和评论（评论功能将在 Phase 3 实现）
+ * 显示单个帖子的完整内容和评论
  */
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
@@ -41,12 +41,29 @@ export default function PostDetail() {
     const { user, isAuthenticated } = useUser();
 
     const [post, setPost] = useState(null);
+    const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [commentsLoading, setCommentsLoading] = useState(false);
     const [error, setError] = useState('');
     const [isPlaying, setIsPlaying] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+    // 评论相关状态
+    const [newComment, setNewComment] = useState('');
+    const [replyTo, setReplyTo] = useState(null);
+    const [replyContent, setReplyContent] = useState('');
+    const [submittingComment, setSubmittingComment] = useState(false);
+    const [commentsPage, setCommentsPage] = useState(1);
+    const [hasMoreComments, setHasMoreComments] = useState(false);
+    const [totalComments, setTotalComments] = useState(0);
+
+    // 点赞动画状态
+    const [likeAnimating, setLikeAnimating] = useState(false);
+    const [commentLikeAnimating, setCommentLikeAnimating] = useState({});
+
     const audioRef = useRef(null);
+    const commentInputRef = useRef(null);
+    const replyInputRef = useRef(null);
 
     // 获取帖子详情
     useEffect(() => {
@@ -70,6 +87,9 @@ export default function PostDetail() {
 
                 const data = await res.json();
                 setPost(data);
+
+                // 获取评论
+                fetchComments(1);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -79,6 +99,38 @@ export default function PostDetail() {
 
         fetchPost();
     }, [id]);
+
+    // 获取评论列表
+    const fetchComments = async (page = 1) => {
+        if (!id) return;
+
+        setCommentsLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+            const res = await fetch(
+                `${API_BASE}/api/posts/${id}/comments?page=${page}&page_size=10`,
+                { headers }
+            );
+
+            if (res.ok) {
+                const data = await res.json();
+                if (page === 1) {
+                    setComments(data.comments);
+                } else {
+                    setComments(prev => [...prev, ...data.comments]);
+                }
+                setHasMoreComments(data.has_more);
+                setTotalComments(data.total);
+                setCommentsPage(page);
+            }
+        } catch (err) {
+            console.error('获取评论失败:', err);
+        } finally {
+            setCommentsLoading(false);
+        }
+    };
 
     // 格式化时间
     const formatTime = (dateStr) => {
@@ -112,12 +164,16 @@ export default function PostDetail() {
         }
     };
 
-    // 处理点赞
+    // 处理帖子点赞
     const handleLike = async () => {
         if (!isAuthenticated) {
             router.push('/login');
             return;
         }
+
+        // 触发点赞动画
+        setLikeAnimating(true);
+        setTimeout(() => setLikeAnimating(false), 600);
 
         try {
             const token = localStorage.getItem('token');
@@ -129,11 +185,11 @@ export default function PostDetail() {
             });
 
             if (res.ok) {
-                // 更新本地状态
+                const result = await res.json();
                 setPost(prev => ({
                     ...prev,
-                    is_liked: !prev.is_liked,
-                    likes_count: prev.is_liked ? prev.likes_count - 1 : prev.likes_count + 1
+                    is_liked: result.is_liked,
+                    likes_count: result.likes_count
                 }));
             }
         } catch (err) {
@@ -141,7 +197,206 @@ export default function PostDetail() {
         }
     };
 
-    // 处理删除
+    // 处理评论点赞
+    const handleCommentLike = async (commentId, isReply = false, parentId = null) => {
+        if (!isAuthenticated) {
+            router.push('/login');
+            return;
+        }
+
+        // 触发点赞动画
+        setCommentLikeAnimating(prev => ({ ...prev, [commentId]: true }));
+        setTimeout(() => {
+            setCommentLikeAnimating(prev => ({ ...prev, [commentId]: false }));
+        }, 600);
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE}/api/comments/${commentId}/like`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.ok) {
+                const result = await res.json();
+
+                // 更新评论状态
+                setComments(prev => prev.map(comment => {
+                    if (comment.id === commentId) {
+                        return {
+                            ...comment,
+                            is_liked: result.is_liked,
+                            likes_count: result.likes_count
+                        };
+                    }
+                    // 检查是否是回复
+                    if (comment.replies) {
+                        return {
+                            ...comment,
+                            replies: comment.replies.map(reply => {
+                                if (reply.id === commentId) {
+                                    return {
+                                        ...reply,
+                                        is_liked: result.is_liked,
+                                        likes_count: result.likes_count
+                                    };
+                                }
+                                return reply;
+                            })
+                        };
+                    }
+                    return comment;
+                }));
+            }
+        } catch (err) {
+            console.error('评论点赞失败:', err);
+        }
+    };
+
+    // 发表评论
+    const handleSubmitComment = async (e) => {
+        e.preventDefault();
+
+        if (!isAuthenticated) {
+            router.push('/login');
+            return;
+        }
+
+        const content = newComment.trim();
+        if (!content) return;
+
+        setSubmittingComment(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE}/api/posts/${id}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content })
+            });
+
+            if (res.ok) {
+                const newCommentData = await res.json();
+                setComments(prev => [newCommentData, ...prev]);
+                setNewComment('');
+                setTotalComments(prev => prev + 1);
+
+                // 更新帖子评论数
+                setPost(prev => ({
+                    ...prev,
+                    comments_count: prev.comments_count + 1
+                }));
+            }
+        } catch (err) {
+            console.error('发表评论失败:', err);
+        } finally {
+            setSubmittingComment(false);
+        }
+    };
+
+    // 发表回复
+    const handleSubmitReply = async (e, parentId) => {
+        e.preventDefault();
+
+        if (!isAuthenticated) {
+            router.push('/login');
+            return;
+        }
+
+        const content = replyContent.trim();
+        if (!content) return;
+
+        setSubmittingComment(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE}/api/posts/${id}/comments`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content, parent_id: parentId })
+            });
+
+            if (res.ok) {
+                const newReplyData = await res.json();
+
+                // 更新评论的回复列表
+                setComments(prev => prev.map(comment => {
+                    if (comment.id === parentId) {
+                        return {
+                            ...comment,
+                            replies: [...(comment.replies || []), newReplyData],
+                            reply_count: comment.reply_count + 1
+                        };
+                    }
+                    return comment;
+                }));
+
+                setReplyContent('');
+                setReplyTo(null);
+                setTotalComments(prev => prev + 1);
+
+                // 更新帖子评论数
+                setPost(prev => ({
+                    ...prev,
+                    comments_count: prev.comments_count + 1
+                }));
+            }
+        } catch (err) {
+            console.error('发表回复失败:', err);
+        } finally {
+            setSubmittingComment(false);
+        }
+    };
+
+    // 删除评论
+    const handleDeleteComment = async (commentId, isReply = false, parentId = null) => {
+        if (!confirm('确定要删除这条评论吗？')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE}/api/comments/${commentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.ok) {
+                if (isReply && parentId) {
+                    // 删除回复
+                    setComments(prev => prev.map(comment => {
+                        if (comment.id === parentId) {
+                            return {
+                                ...comment,
+                                replies: comment.replies.filter(r => r.id !== commentId),
+                                reply_count: comment.reply_count - 1
+                            };
+                        }
+                        return comment;
+                    }));
+                } else {
+                    // 删除顶级评论
+                    setComments(prev => prev.filter(c => c.id !== commentId));
+                }
+
+                setTotalComments(prev => prev - 1);
+                setPost(prev => ({
+                    ...prev,
+                    comments_count: Math.max(0, prev.comments_count - 1)
+                }));
+            }
+        } catch (err) {
+            console.error('删除评论失败:', err);
+        }
+    };
+
+    // 处理删除帖子
     const handleDelete = async () => {
         if (!showDeleteConfirm) {
             setShowDeleteConfirm(true);
@@ -170,9 +425,9 @@ export default function PostDetail() {
     };
 
     // 查看用户资料
-    const goToUserProfile = () => {
-        if (post?.author?.id) {
-            router.push(`/user/${post.author.id}`);
+    const goToUserProfile = (userId) => {
+        if (userId) {
+            router.push(`/user/${userId}`);
         }
     };
 
@@ -188,6 +443,156 @@ export default function PostDetail() {
         else if (pageId === 'asr') router.push('/asr_test');
         else if (pageId === 'community') router.push('/community');
         else if (pageId === 'settings') router.push('/settings/profile');
+    };
+
+    // 渲染单个评论
+    const renderComment = (comment, isReply = false, parentId = null) => {
+        const canDeleteComment = user && comment.author?.id === user.id;
+        const isLikeAnimating = commentLikeAnimating[comment.id];
+
+        return (
+            <div
+                key={comment.id}
+                className={`comment-item ${isReply ? 'reply' : ''}`}
+                style={isReply ? {
+                    marginLeft: '2.5rem',
+                    paddingLeft: '1rem',
+                    borderLeft: '2px solid rgba(123, 220, 147, 0.3)',
+                    background: 'rgba(26, 26, 46, 0.2)'
+                } : {}}
+            >
+                <div className="comment-avatar" onClick={() => goToUserProfile(comment.author?.id)}>
+                    {comment.author?.avatar_url ? (
+                        <img
+                            src={`${API_BASE}${comment.author.avatar_url}`}
+                            alt={comment.author.nickname || comment.author.username}
+                            style={{
+                                width: '36px',
+                                height: '36px',
+                                maxWidth: '36px',
+                                maxHeight: '36px',
+                                objectFit: 'cover',
+                                borderRadius: '50%'
+                            }}
+                        />
+                    ) : (
+                        <span className="avatar-initial">
+                            {(comment.author?.nickname || comment.author?.username || 'U')[0].toUpperCase()}
+                        </span>
+                    )}
+                </div>
+
+                <div className="comment-content">
+                    <div className="comment-header">
+                        <span
+                            className="comment-author"
+                            onClick={() => goToUserProfile(comment.author?.id)}
+                            style={{ color: '#ffffff', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' }}
+                        >
+                            {comment.author?.nickname || comment.author?.username}
+                        </span>
+                        <span
+                            className="comment-level"
+                            style={{ color: LEVEL_COLORS[comment.author?.level || 1], marginLeft: '0.5rem', fontSize: '0.8rem' }}
+                        >
+                            {comment.author?.level_name}
+                        </span>
+                        <span className="comment-time" style={{ color: '#ffffff', marginLeft: '0.5rem', fontSize: '0.8rem' }}>{formatTime(comment.created_at)}</span>
+                    </div>
+
+                    <p className="comment-text" style={{ color: '#ffffff', fontSize: '0.95rem', lineHeight: 1.6, margin: 0 }}>{comment.content}</p>
+
+                    {comment.audio_url && (
+                        <div className="comment-audio">
+                            <audio controls src={`${API_BASE}${comment.audio_url}`} />
+                        </div>
+                    )}
+
+                    <div className="comment-actions">
+                        <button
+                            className={`action-btn like-action ${comment.is_liked ? 'liked' : ''} ${isLikeAnimating ? 'animating' : ''}`}
+                            onClick={() => handleCommentLike(comment.id, isReply, parentId)}
+                        >
+                            <span className="like-icon">{comment.is_liked ? '❤️' : '🤍'}</span>
+                            <span>{comment.likes_count || 0}</span>
+                            {isLikeAnimating && <span className="like-burst">💖</span>}
+                        </button>
+
+                        {!isReply && (
+                            <button
+                                className="action-btn reply-action"
+                                onClick={() => {
+                                    setReplyTo(replyTo === comment.id ? null : comment.id);
+                                    setReplyContent('');
+                                    setTimeout(() => replyInputRef.current?.focus(), 100);
+                                }}
+                            >
+                                💬 回复
+                            </button>
+                        )}
+
+                        {canDeleteComment && (
+                            <button
+                                className="action-btn delete-action"
+                                onClick={() => handleDeleteComment(comment.id, isReply, parentId)}
+                            >
+                                🗑️ 删除
+                            </button>
+                        )}
+                    </div>
+
+                    {/* 回复输入框 */}
+                    {replyTo === comment.id && (
+                        <form className="reply-form" onSubmit={(e) => handleSubmitReply(e, comment.id)}>
+                            <input
+                                ref={replyInputRef}
+                                type="text"
+                                placeholder={`回复 @${comment.author?.nickname || comment.author?.username}...`}
+                                value={replyContent}
+                                onChange={(e) => setReplyContent(e.target.value)}
+                                maxLength={1000}
+                            />
+                            <button
+                                type="submit"
+                                disabled={!replyContent.trim() || submittingComment}
+                            >
+                                {submittingComment ? '发送中...' : '发送'}
+                            </button>
+                            <button
+                                type="button"
+                                className="cancel-btn"
+                                onClick={() => {
+                                    setReplyTo(null);
+                                    setReplyContent('');
+                                }}
+                            >
+                                取消
+                            </button>
+                        </form>
+                    )}
+
+                    {/* 回复列表 */}
+                    {!isReply && comment.replies && comment.replies.length > 0 && (
+                        <div className="replies-list">
+                            {comment.replies.map(reply => renderComment(reply, true, comment.id))}
+                        </div>
+                    )}
+
+                    {/* 查看更多回复 */}
+                    {!isReply && comment.reply_count > (comment.replies?.length || 0) && (
+                        <button
+                            className="load-more-replies"
+                            onClick={() => {
+                                // TODO: 加载更多回复
+                                console.log('加载更多回复');
+                            }}
+                        >
+                            查看更多 {comment.reply_count - (comment.replies?.length || 0)} 条回复
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
     };
 
     if (loading) {
@@ -313,7 +718,7 @@ export default function PostDetail() {
                     <article className="post-detail">
                         {/* 作者信息 */}
                         <header className="post-header">
-                            <div className="author-info" onClick={goToUserProfile}>
+                            <div className="author-info" onClick={() => goToUserProfile(post.author?.id)}>
                                 <div className="avatar">
                                     {post.author.avatar_url ? (
                                         <img src={`${API_BASE}${post.author.avatar_url}`} alt={post.author.nickname || post.author.username} />
@@ -392,11 +797,18 @@ export default function PostDetail() {
                         <footer className="post-footer">
                             <div className="stats">
                                 <button
-                                    className={`stat-btn like-btn ${post.is_liked ? 'liked' : ''}`}
+                                    className={`stat-btn like-btn ${post.is_liked ? 'liked' : ''} ${likeAnimating ? 'animating' : ''}`}
                                     onClick={handleLike}
                                 >
                                     <span className="icon">{post.is_liked ? '❤️' : '🤍'}</span>
                                     <span className="label">{post.likes_count} 点赞</span>
+                                    {likeAnimating && (
+                                        <div className="like-particles">
+                                            {[...Array(6)].map((_, i) => (
+                                                <span key={i} className="particle" style={{ '--i': i }}>💖</span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </button>
                                 <div className="stat-item">
                                     <span className="icon">💬</span>
@@ -410,12 +822,87 @@ export default function PostDetail() {
                         </footer>
                     </article>
 
-                    {/* 评论区占位（Phase 3 实现） */}
+                    {/* 评论区 */}
                     <div className="comments-section">
-                        <h3>💬 评论区</h3>
-                        <div className="coming-soon">
-                            <span className="icon">🚧</span>
-                            <p>评论功能即将上线，敬请期待！</p>
+                        <h3>💬 评论区 <span className="comment-count">({totalComments})</span></h3>
+
+                        {/* 发表评论 */}
+                        {isAuthenticated ? (
+                            <form className="comment-form" onSubmit={handleSubmitComment}>
+                                <div className="form-avatar">
+                                    {user?.avatar_url ? (
+                                        <img
+                                            src={`${API_BASE}${user.avatar_url}`}
+                                            alt={user.nickname || user.username}
+                                            style={{
+                                                width: '40px',
+                                                height: '40px',
+                                                maxWidth: '40px',
+                                                maxHeight: '40px',
+                                                objectFit: 'cover',
+                                                borderRadius: '50%'
+                                            }}
+                                        />
+                                    ) : (
+                                        <span className="avatar-initial">
+                                            {(user?.nickname || user?.username || 'U')[0].toUpperCase()}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="form-input-wrapper">
+                                    <textarea
+                                        ref={commentInputRef}
+                                        placeholder="发表你的评论..."
+                                        value={newComment}
+                                        onChange={(e) => setNewComment(e.target.value)}
+                                        maxLength={1000}
+                                        rows={3}
+                                    />
+                                    <div className="form-actions">
+                                        <span className="char-count">{newComment.length}/1000</span>
+                                        <button
+                                            type="submit"
+                                            disabled={!newComment.trim() || submittingComment}
+                                        >
+                                            {submittingComment ? '发送中...' : '发表评论'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        ) : (
+                            <div className="login-prompt">
+                                <p>登录后参与评论</p>
+                                <button onClick={() => router.push('/login')}>去登录</button>
+                            </div>
+                        )}
+
+                        {/* 评论列表 */}
+                        <div className="comments-list">
+                            {commentsLoading && comments.length === 0 ? (
+                                <div className="comments-loading">
+                                    <div className="loading-spinner small"></div>
+                                    <p>加载评论中...</p>
+                                </div>
+                            ) : comments.length > 0 ? (
+                                <>
+                                    {comments.map(comment => renderComment(comment))}
+
+                                    {hasMoreComments && (
+                                        <button
+                                            className="load-more-btn"
+                                            onClick={() => fetchComments(commentsPage + 1)}
+                                            disabled={commentsLoading}
+                                        >
+                                            {commentsLoading ? '加载中...' : '加载更多评论'}
+                                        </button>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="no-comments">
+                                    <span className="icon">💭</span>
+                                    <p>暂无评论，来发表第一条评论吧！</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -666,6 +1153,7 @@ export default function PostDetail() {
                     border: none;
                     cursor: pointer;
                     padding: 0;
+                    position: relative;
                 }
 
                 .stat-btn:hover {
@@ -675,6 +1163,7 @@ export default function PostDetail() {
                 .stat-btn .icon,
                 .stat-item .icon {
                     font-size: 1.1rem;
+                    transition: transform 0.2s;
                 }
 
                 .stat-btn .label,
@@ -687,14 +1176,44 @@ export default function PostDetail() {
                     color: #ef4444;
                 }
 
-                .like-btn.liked {
-                    animation: likeAnim 0.3s ease;
+                .like-btn.animating .icon {
+                    animation: heartBeat 0.6s ease-in-out;
                 }
 
-                @keyframes likeAnim {
-                    50% { transform: scale(1.1); }
+                @keyframes heartBeat {
+                    0% { transform: scale(1); }
+                    25% { transform: scale(1.3); }
+                    50% { transform: scale(1); }
+                    75% { transform: scale(1.2); }
+                    100% { transform: scale(1); }
                 }
 
+                .like-particles {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    pointer-events: none;
+                }
+
+                .particle {
+                    position: absolute;
+                    font-size: 0.8rem;
+                    animation: particleBurst 0.6s ease-out forwards;
+                    animation-delay: calc(var(--i) * 0.05s);
+                }
+
+                @keyframes particleBurst {
+                    0% {
+                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(0);
+                    }
+                    100% {
+                        opacity: 0;
+                        transform: translate(-50%, -50%) scale(2);
+                    }
+                }
+
+                /* 评论区样式 */
                 .comments-section {
                     background: rgba(44, 95, 78, 0.15);
                     border-radius: 20px;
@@ -705,25 +1224,419 @@ export default function PostDetail() {
                 .comments-section h3 {
                     color: #e2e8f0;
                     font-size: 1.1rem;
+                    margin: 0 0 1.5rem 0;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
+
+                .comment-count {
+                    color: #64748b;
+                    font-weight: normal;
+                    font-size: 0.9rem;
+                }
+
+                /* 评论表单 */
+                .comment-form {
+                    display: flex;
+                    gap: 1rem;
+                    margin-bottom: 1.5rem;
+                    padding-bottom: 1.5rem;
+                    border-bottom: 1px solid rgba(123, 220, 147, 0.1);
+                }
+
+                .form-avatar {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    overflow: hidden;
+                    background: linear-gradient(135deg, #2c5f4e, #3d7a64);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                }
+
+                .form-avatar img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+
+                .form-input-wrapper {
+                    flex: 1;
+                }
+
+                .form-input-wrapper textarea {
+                    width: 100%;
+                    padding: 0.875rem 1rem;
+                    background: rgba(26, 26, 46, 0.5);
+                    border: 1px solid rgba(123, 220, 147, 0.2);
+                    border-radius: 12px;
+                    color: #e2e8f0;
+                    font-size: 0.95rem;
+                    resize: none;
+                    transition: all 0.2s;
+                }
+
+                .form-input-wrapper textarea:focus {
+                    outline: none;
+                    border-color: #7bdc93;
+                    box-shadow: 0 0 0 3px rgba(123, 220, 147, 0.1);
+                }
+
+                .form-input-wrapper textarea::placeholder {
+                    color: #64748b;
+                }
+
+                .form-actions {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-top: 0.75rem;
+                }
+
+                .char-count {
+                    color: #64748b;
+                    font-size: 0.8rem;
+                }
+
+                .form-actions button {
+                    padding: 0.625rem 1.25rem;
+                    background: linear-gradient(135deg, #2c5f4e, #3d7a64);
+                    border: none;
+                    border-radius: 8px;
+                    color: white;
+                    font-size: 0.9rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .form-actions button:hover:not(:disabled) {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(123, 220, 147, 0.3);
+                }
+
+                .form-actions button:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+
+                /* 登录提示 */
+                .login-prompt {
+                    text-align: center;
+                    padding: 1.5rem;
+                    background: rgba(26, 26, 46, 0.3);
+                    border-radius: 12px;
+                    margin-bottom: 1.5rem;
+                }
+
+                .login-prompt p {
+                    color: #94a3b8;
                     margin: 0 0 1rem 0;
                 }
 
-                .coming-soon {
-                    text-align: center;
-                    padding: 2rem;
+                .login-prompt button {
+                    padding: 0.625rem 1.5rem;
+                    background: linear-gradient(135deg, #2c5f4e, #3d7a64);
+                    border: none;
+                    border-radius: 8px;
+                    color: white;
+                    font-size: 0.9rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .login-prompt button:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(123, 220, 147, 0.3);
+                }
+
+                /* 评论列表 */
+                .comments-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1rem;
+                }
+
+                .comment-item {
+                    display: flex;
+                    gap: 0.875rem;
+                    padding: 1rem;
                     background: rgba(26, 26, 46, 0.3);
+                    border-radius: 12px;
+                    transition: all 0.2s;
+                }
+
+                .comment-item:hover {
+                    background: rgba(26, 26, 46, 0.5);
+                }
+
+                .comment-item.reply {
+                    margin-left: 2.5rem;
+                    background: rgba(26, 26, 46, 0.2);
+                    padding: 0.875rem;
+                }
+
+                .comment-avatar {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    overflow: hidden;
+                    background: linear-gradient(135deg, #2c5f4e, #3d7a64);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    cursor: pointer;
+                    position: relative; /* 添加定位上下文 */
+                }
+
+                .comment-avatar img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    display: block; /* 防止行内元素间隙 */
+                    max-width: 100%; /*以此确保不超出容器*/
+                }
+
+                .comment-content {
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .comment-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    margin-bottom: 0.375rem;
+                    flex-wrap: wrap;
+                }
+
+                .comment-author {
+                    color: #e2e8f0;
+                    font-weight: 600;
+                    font-size: 0.9rem;
+                    cursor: pointer;
+                    transition: color 0.2s;
+                }
+
+                .comment-author:hover {
+                    color: #7bdc93;
+                }
+
+                .comment-level {
+                    font-size: 0.75rem;
+                    font-weight: 500;
+                }
+
+                .comment-time {
+                    color: #64748b;
+                    font-size: 0.8rem;
+                }
+
+                .comment-text {
+                    color: #ffffff;
+                    font-size: 0.95rem; /* 稍微加大一点字号以提升可读性 */
+                    line-height: 1.6;
+                    margin: 0;
+                    word-break: break-word;
+                }
+
+                .comment-audio {
+                    margin-top: 0.5rem;
+                }
+
+                .comment-audio audio {
+                    width: 100%;
+                    max-width: 300px;
+                    height: 32px;
+                }
+
+                .comment-actions {
+                    display: flex;
+                    gap: 1rem;
+                    margin-top: 0.625rem;
+                }
+
+                .action-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.25rem;
+                    background: transparent;
+                    border: none;
+                    color: #64748b;
+                    font-size: 0.8rem;
+                    cursor: pointer;
+                    padding: 0.25rem 0.5rem;
+                    border-radius: 4px;
+                    transition: all 0.2s;
+                    position: relative;
+                }
+
+                .action-btn:hover {
+                    color: #94a3b8;
+                    background: rgba(123, 220, 147, 0.1);
+                }
+
+                .like-action.liked {
+                    color: #ef4444;
+                }
+
+                .like-action.animating .like-icon {
+                    animation: heartBeat 0.6s ease-in-out;
+                }
+
+                .like-burst {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    animation: burstOut 0.5s ease-out forwards;
+                    pointer-events: none;
+                }
+
+                .delete-action:hover {
+                    color: #ef4444;
+                    background: rgba(239, 68, 68, 0.1);
+                }
+
+                /* 回复表单 */
+                .reply-form {
+                    display: flex;
+                    gap: 0.5rem;
+                    margin-top: 0.75rem;
+                    flex-wrap: wrap;
+                }
+
+                .reply-form input {
+                    flex: 1;
+                    min-width: 200px;
+                    padding: 0.5rem 0.875rem;
+                    background: rgba(26, 26, 46, 0.5);
+                    border: 1px solid rgba(123, 220, 147, 0.2);
+                    border-radius: 8px;
+                    color: #e2e8f0;
+                    font-size: 0.85rem;
+                }
+
+                .reply-form input:focus {
+                    outline: none;
+                    border-color: #7bdc93;
+                }
+
+                .reply-form input::placeholder {
+                    color: #64748b;
+                }
+
+                .reply-form button {
+                    padding: 0.5rem 1rem;
+                    background: linear-gradient(135deg, #2c5f4e, #3d7a64);
+                    border: none;
+                    border-radius: 8px;
+                    color: white;
+                    font-size: 0.85rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .reply-form button:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+
+                .reply-form .cancel-btn {
+                    background: transparent;
+                    border: 1px solid rgba(123, 220, 147, 0.3);
+                    color: #94a3b8;
+                }
+
+                .reply-form .cancel-btn:hover {
+                    border-color: #7bdc93;
+                    color: #7bdc93;
+                }
+
+                /* 回复列表 */
+                .replies-list {
+                    margin-top: 0.75rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+                }
+
+                .load-more-replies {
+                    background: transparent;
+                    border: none;
+                    color: #7bdc93;
+                    font-size: 0.85rem;
+                    cursor: pointer;
+                    padding: 0.5rem 0;
+                    margin-top: 0.5rem;
+                    transition: opacity 0.2s;
+                }
+
+                .load-more-replies:hover {
+                    opacity: 0.8;
+                }
+
+                /* 加载更多评论 */
+                .load-more-btn {
+                    width: 100%;
+                    padding: 0.875rem;
+                    background: rgba(44, 95, 78, 0.2);
+                    border: 1px solid rgba(123, 220, 147, 0.2);
+                    border-radius: 10px;
+                    color: #7bdc93;
+                    font-size: 0.9rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .load-more-btn:hover:not(:disabled) {
+                    background: rgba(44, 95, 78, 0.3);
+                    border-color: #7bdc93;
+                }
+
+                .load-more-btn:disabled {
+                    opacity: 0.5;
+                    cursor: not-allowed;
+                }
+
+                /* 无评论状态 */
+                .no-comments {
+                    text-align: center;
+                    padding: 2.5rem;
+                    background: rgba(26, 26, 46, 0.2);
                     border-radius: 12px;
                 }
 
-                .coming-soon .icon {
+                .no-comments .icon {
                     font-size: 2.5rem;
                     display: block;
                     margin-bottom: 0.75rem;
                 }
 
-                .coming-soon p {
+                .no-comments p {
                     color: #94a3b8;
                     margin: 0;
+                }
+
+                /* 评论加载状态 */
+                .comments-loading {
+                    text-align: center;
+                    padding: 2rem;
+                }
+
+                .comments-loading p {
+                    color: #94a3b8;
+                    margin: 0.75rem 0 0 0;
+                }
+
+                .loading-spinner.small {
+                    width: 24px;
+                    height: 24px;
+                    border-width: 2px;
+                    margin: 0 auto;
                 }
 
                 @media (max-width: 768px) {
@@ -747,6 +1660,30 @@ export default function PostDetail() {
 
                     .stats {
                         gap: 1rem;
+                    }
+
+                    .comment-form {
+                        flex-direction: column;
+                    }
+
+                    .form-avatar {
+                        display: none;
+                    }
+
+                    .comment-item.reply {
+                        margin-left: 1.5rem;
+                    }
+
+                    .reply-form {
+                        flex-direction: column;
+                    }
+
+                    .reply-form input {
+                        min-width: 100%;
+                    }
+
+                    .reply-form button {
+                        width: auto;
                     }
                 }
             `}</style>

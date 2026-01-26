@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 from .config import Config
-from .routes import health_router, auth_router, asr_router, users_router, posts_router
+from .routes import health_router, auth_router, asr_router, users_router, posts_router, comments_router, follows_router
 from .database.migrations import run_migrations
 
 # 创建 FastAPI 应用实例
@@ -37,6 +37,8 @@ app.include_router(auth_router)
 app.include_router(asr_router)
 app.include_router(users_router)
 app.include_router(posts_router)
+app.include_router(comments_router)
+app.include_router(follows_router)
 
 
 @app.on_event("startup")

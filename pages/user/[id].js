@@ -97,8 +97,9 @@ export default function UserProfile() {
 
     setFollowLoading(true);
     try {
+      const method = isFollowing ? 'DELETE' : 'POST';
       const res = await fetch(`${API_BASE}/api/users/${id}/follow`, {
-        method: 'POST',
+        method: method,
         headers: {
           'Authorization': `Bearer ${currentUser.token}`,
           'Content-Type': 'application/json'
@@ -107,13 +108,17 @@ export default function UserProfile() {
 
       if (res.ok) {
         const data = await res.json();
+        const prevIsFollowing = isFollowing;
         setIsFollowing(data.is_following);
-        setUser(prev => ({
-          ...prev,
-          followers_count: data.is_following
-            ? prev.followers_count + 1
-            : prev.followers_count - 1
-        }));
+
+        if (prevIsFollowing !== data.is_following) {
+          setUser(prev => ({
+            ...prev,
+            followers_count: data.is_following
+              ? prev.followers_count + 1
+              : Math.max(0, prev.followers_count - 1)
+          }));
+        }
       }
     } catch (err) {
       console.error('关注操作失败:', err);
@@ -302,11 +307,17 @@ export default function UserProfile() {
               </div>
 
               <div className="stats-row">
-                <div className="stat-item">
+                <div
+                  className="stat-item clickable"
+                  onClick={() => router.push(`/user/${user.id}/followers`)}
+                >
                   <span className="stat-value">{user?.followers_count || 0}</span>
                   <span className="stat-label">粉丝</span>
                 </div>
-                <div className="stat-item">
+                <div
+                  className="stat-item clickable"
+                  onClick={() => router.push(`/user/${user.id}/following`)}
+                >
                   <span className="stat-value">{user?.following_count || 0}</span>
                   <span className="stat-label">关注</span>
                 </div>
@@ -582,6 +593,19 @@ const styles = `
   .stat-label {
     font-size: 0.875rem;
     color: #94a3b8;
+  }
+
+  .stat-item.clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .stat-item.clickable:hover {
+    transform: translateY(-2px);
+  }
+
+  .stat-item.clickable:hover .stat-value {
+    text-shadow: 0 0 10px rgba(123, 220, 147, 0.4);
   }
 
   .action-buttons {

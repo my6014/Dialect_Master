@@ -28,6 +28,7 @@ async def get_posts(
     page_size: int = Query(20, ge=1, le=50),
     dialect: Optional[str] = Query(None, description="方言标签筛选"),
     user_id: Optional[int] = Query(None, description="用户ID筛选"),
+    following: bool = Query(False, description="仅显示关注的人"),
     current_user: Optional[dict] = Depends(get_current_user_optional)
 ):
     """
@@ -37,6 +38,7 @@ async def get_posts(
     - **page_size**: 每页数量，最大50
     - **dialect**: 可选，按方言标签筛选
     - **user_id**: 可选，获取指定用户的帖子
+    - **following**: 可选，仅显示关注的人
     """
     viewer_id = current_user["id"] if current_user else None
     result = PostService.get_posts(
@@ -44,7 +46,8 @@ async def get_posts(
         page_size=page_size,
         dialect_tag=dialect,
         user_id=user_id,
-        viewer_id=viewer_id
+        viewer_id=viewer_id,
+        following_only=following
     )
     return result
 

@@ -42,9 +42,10 @@ export default function Community() {
     const [loadingMore, setLoadingMore] = useState(false);
     const [selectedDialect, setSelectedDialect] = useState(null);
     const [dialectStats, setDialectStats] = useState([]);
+    const [currentTab, setCurrentTab] = useState('all'); // 'all' or 'following'
 
     // 获取帖子列表
-    const fetchPosts = useCallback(async (pageNum = 1, dialect = null, append = false) => {
+    const fetchPosts = useCallback(async (pageNum = 1, dialect = null, tab = 'all', append = false) => {
         if (pageNum === 1) {
             setLoading(true);
         } else {
@@ -58,6 +59,9 @@ export default function Community() {
             let url = `${API_BASE}/api/posts?page=${pageNum}&page_size=20`;
             if (dialect) {
                 url += `&dialect=${encodeURIComponent(dialect)}`;
+            }
+            if (tab === 'following') {
+                url += `&following=true`;
             }
 
             const res = await fetch(url, { headers });
@@ -96,14 +100,14 @@ export default function Community() {
     }, []);
 
     useEffect(() => {
-        fetchPosts(1, selectedDialect);
+        fetchPosts(1, selectedDialect, currentTab);
         fetchDialectStats();
-    }, [fetchPosts, fetchDialectStats, selectedDialect]);
+    }, [fetchPosts, fetchDialectStats, selectedDialect, currentTab]);
 
     // 加载更多
     const loadMore = () => {
         if (!loadingMore && hasMore) {
-            fetchPosts(page + 1, selectedDialect, true);
+            fetchPosts(page + 1, selectedDialect, currentTab, true);
         }
     };
 
@@ -202,6 +206,24 @@ export default function Community() {
                         )}
                     </div>
 
+                    {/* 动态/关注 Tab */}
+                    <div className="tabs-container">
+                        <button
+                            className={`tab-item ${currentTab === 'all' ? 'active' : ''}`}
+                            onClick={() => setCurrentTab('all')}
+                        >
+                            全部动态
+                        </button>
+                        {isAuthenticated && (
+                            <button
+                                className={`tab-item ${currentTab === 'following' ? 'active' : ''}`}
+                                onClick={() => setCurrentTab('following')}
+                            >
+                                关注的人
+                            </button>
+                        )}
+                    </div>
+
                     {/* 方言标签筛选 */}
                     <div className="dialect-filter">
                         <div className="filter-header">
@@ -252,13 +274,13 @@ export default function Community() {
                                 <h3>
                                     {selectedDialect
                                         ? `暂无 #${selectedDialect} 相关帖子`
-                                        : '社区还没有帖子'
+                                        : (currentTab === 'following' ? '你关注的人还没发过帖子' : '社区还没有帖子')
                                     }
                                 </h3>
                                 <p>
                                     {selectedDialect
                                         ? '试试其他方言标签，或者发布第一篇帖子！'
-                                        : '快来发布第一篇动态，分享你的方言故事吧！'
+                                        : (currentTab === 'following' ? '去关注更多有趣的人吧！' : '快来发布第一篇动态，分享你的方言故事吧！')
                                     }
                                 </p>
                                 {isAuthenticated && (
@@ -402,6 +424,37 @@ export default function Community() {
                 .create-post-btn:hover {
                     transform: translateY(-2px);
                     box-shadow: 0 4px 12px rgba(123, 220, 147, 0.3);
+                }
+
+                .tabs-container {
+                    display: flex;
+                    gap: 1rem;
+                    margin-bottom: 1.5rem;
+                    border-bottom: 1px solid rgba(123, 220, 147, 0.2);
+                    padding-bottom: 0.5rem;
+                }
+
+                .tab-item {
+                    padding: 0.75rem 1.5rem;
+                    background: transparent;
+                    border: none;
+                    color: #94a3b8;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    border-radius: 8px;
+                    font-size: 1rem;
+                    font-weight: 500;
+                }
+
+                .tab-item:hover {
+                    color: #e2e8f0;
+                    background: rgba(44, 95, 78, 0.2);
+                }
+
+                .tab-item.active {
+                    color: #7bdc93;
+                    background: rgba(123, 220, 147, 0.1);
+                    font-weight: 600;
                 }
 
                 .dialect-filter {

@@ -133,7 +133,8 @@ class PostService:
     
     @staticmethod
     def get_posts(page: int = 1, page_size: int = 20, dialect_tag: Optional[str] = None,
-                  user_id: Optional[int] = None, viewer_id: Optional[int] = None) -> Dict[str, Any]:
+                  user_id: Optional[int] = None, viewer_id: Optional[int] = None,
+                  following_only: bool = False) -> Dict[str, Any]:
         """
         获取帖子列表
         
@@ -143,6 +144,7 @@ class PostService:
             dialect_tag: 方言标签筛选
             user_id: 用户ID筛选（获取某用户的帖子）
             viewer_id: 查看者ID（用于判断是否点赞）
+            following_only: 是否仅显示关注的人的帖子
             
         Returns:
             帖子列表和分页信息
@@ -163,6 +165,10 @@ class PostService:
                 if user_id:
                     conditions.append("p.user_id = %s")
                     params.append(user_id)
+                
+                if following_only and viewer_id:
+                    conditions.append("p.user_id IN (SELECT following_id FROM follows WHERE follower_id = %s)")
+                    params.append(viewer_id)
                 
                 where_clause = " AND ".join(conditions)
                 

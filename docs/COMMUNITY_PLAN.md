@@ -395,12 +395,12 @@ CREATE INDEX idx_notifications_created ON notifications(created_at DESC);
 - [x] 点赞 API（基础版） ✅
 
 ### Phase 3 - 互动系统
-- [ ] 评论表创建
-- [ ] 点赞表创建
-- [ ] 评论 API
-- [ ] 点赞 API
-- [ ] 评论区 UI 组件
-- [ ] 点赞动画
+- [x] 评论表创建 ✅
+- [x] 点赞表创建 ✅
+- [x] 评论 API ✅
+- [x] 点赞 API ✅
+- [x] 评论区 UI 组件 ✅
+- [x] 点赞动画 ✅
 
 ### Phase 4 - 关注系统
 - [ ] 关注表创建

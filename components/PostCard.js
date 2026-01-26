@@ -25,6 +25,7 @@ const DIALECT_COLORS = {
 export default function PostCard({ post, onLike, onDelete, currentUserId }) {
     const router = useRouter();
     const [isPlaying, setIsPlaying] = useState(false);
+    const [likeAnimating, setLikeAnimating] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const audioRef = useRef(null);
 
@@ -93,6 +94,10 @@ export default function PostCard({ post, onLike, onDelete, currentUserId }) {
     // 处理点赞
     const handleLike = (e) => {
         e.stopPropagation();
+        if (!is_liked) {
+            setLikeAnimating(true);
+            setTimeout(() => setLikeAnimating(false), 600);
+        }
         onLike && onLike(id, !is_liked);
     };
 
@@ -164,9 +169,16 @@ export default function PostCard({ post, onLike, onDelete, currentUserId }) {
 
             {/* 帖子底部互动栏 */}
             <div className="post-footer">
-                <button className={`action-btn like-btn ${is_liked ? 'liked' : ''}`} onClick={handleLike}>
+                <button className={`action-btn like-btn ${is_liked ? 'liked' : ''} ${likeAnimating ? 'animating' : ''}`} onClick={handleLike}>
                     <span className="icon">{is_liked ? '❤️' : '🤍'}</span>
                     <span className="count">{likes_count}</span>
+                    {likeAnimating && (
+                        <div className="like-particles">
+                            {[...Array(6)].map((_, i) => (
+                                <span key={i} className="particle" style={{ '--i': i }}>💖</span>
+                            ))}
+                        </div>
+                    )}
                 </button>
                 <button className="action-btn comment-btn">
                     <span className="icon">💬</span>
@@ -420,8 +432,47 @@ export default function PostCard({ post, onLike, onDelete, currentUserId }) {
                     animation: likeAnim 0.3s ease;
                 }
 
-                @keyframes likeAnim {
-                    50% { transform: scale(1.2); }
+                .like-btn.animating .icon {
+                    animation: heartBeat 0.6s ease-in-out;
+                }
+
+                @keyframes heartBeat {
+                    0% { transform: scale(1); }
+                    25% { transform: scale(1.3); }
+                    50% { transform: scale(1); }
+                    75% { transform: scale(1.2); }
+                    100% { transform: scale(1); }
+                }
+
+                .like-particles {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    pointer-events: none;
+                }
+
+                .particle {
+                    position: absolute;
+                    font-size: 0.8rem;
+                    animation: particleBurst 0.6s ease-out forwards;
+                    animation-delay: calc(var(--i) * 0.05s);
+                }
+
+                @keyframes particleBurst {
+                    0% {
+                        opacity: 1;
+                        transform: translate(-50%, -50%) scale(0);
+                    }
+                    50% {
+                        opacity: 1;
+                    }
+                    100% {
+                        opacity: 0;
+                        transform: translate(
+                            calc(-50% + cos(var(--i) * 60deg) * 30px),
+                            calc(-50% + sin(var(--i) * 60deg) * 30px)
+                        ) scale(1.5);
+                    }
                 }
 
                 @media (max-width: 640px) {
