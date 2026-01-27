@@ -99,7 +99,7 @@ export function ConsumptionChart({ selectedDay = 'today', selectedDevice = '' })
                     </div>
 
                     {/* Pie Chart */}
-                    <div style={{ height: '320px' }}>
+                    <div style={{ height: '320px', width: '100%', minWidth: 0 }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie

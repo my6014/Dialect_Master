@@ -403,23 +403,23 @@ CREATE INDEX idx_notifications_created ON notifications(created_at DESC);
 - [x] 点赞动画 ✅
 
 ### Phase 4 - 关注系统
-- [ ] 关注表创建
-- [ ] 关注/取消关注 API
-- [ ] 粉丝/关注列表页面
-- [ ] 关注动态流
+- [x] 关注表创建 ✅
+- [x] 关注/取消关注 API ✅
+- [x] 粉丝/关注列表页面 ✅
+- [x] 关注动态流 ✅
 
 ### Phase 5 - 通知系统
-- [ ] 通知表创建
-- [ ] 通知 API
-- [ ] 通知中心页面
-- [ ] 未读角标
+- [x] 通知表创建 ✅
+- [x] 通知 API ✅
+- [x] 通知中心页面 ✅
+- [x] 未读角标 ✅
 
 ### Phase 6 - 积分排行
-- [ ] 积分规则实现
-- [ ] 等级计算
-- [ ] 排行榜 API
-- [ ] 排行榜页面
-- [ ] 签到功能
+- [x] 积分规则实现 ✅
+- [x] 等级计算 ✅
+- [x] 排行榜 API ✅
+- [x] 排行榜页面 ✅
+- [x] 签到功能 ✅
 
 ---
 
@@ -432,7 +432,7 @@ CREATE INDEX idx_notifications_created ON notifications(created_at DESC);
 | Phase 3 | 互动系统 | 1-2 天 | 🔴 高 |
 | Phase 4 | 关注系统 | 1 天 | 🟡 中 |
 | Phase 5 | 通知系统 | 1-2 天 | 🟡 中 |
-| Phase 6 | 积分排行 | 1 天 | 🟢 低 |
+| Phase 6 | 积分排行 | 1 天 | 🟢 低(已完成) |
 
 **总计：7-11 天**（基础开发时间）
 

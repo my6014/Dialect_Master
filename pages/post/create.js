@@ -219,6 +219,8 @@ export default function CreatePost() {
                     else if (id === 'asr') router.push('/asr_test');
                     else if (id === 'community') router.push('/community');
                     else if (id === 'settings') router.push('/settings/profile');
+                    else if (id === 'notifications') router.push('/notifications');
+                    else if (id === 'leaderboard') router.push('/leaderboard');
                 }} />
 
                 <div className="create-content">

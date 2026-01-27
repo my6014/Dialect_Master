@@ -128,7 +128,7 @@ export function DemandChart({ dataMode = 'real-time', selectedDay = 'today' }) {
                     </div>
 
                     {/* Line Chart */}
-                    <div style={{ height: '320px' }}>
+                    <div style={{ height: '320px', width: '100%', minWidth: 0 }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={demandData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />

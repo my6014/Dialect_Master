@@ -11,7 +11,8 @@ import {
     Mic,
     Users,
     LogOut,
-    ChevronRight
+    ChevronRight,
+    Bell
 } from 'lucide-react';
 import { useUser, LEVEL_COLORS } from '../hooks/useUser';
 
@@ -31,6 +32,7 @@ export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
         getInitial,
         getLevelName,
         getLevelColor,
+        unreadCount,
         API_BASE
     } = useUser();
 
@@ -82,6 +84,14 @@ export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
             description: '深度学习分析'
         },
         {
+            id: 'notifications',
+            name: '消息中心',
+            icon: Bell,
+            description: '查看您的通知',
+            badge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount.toString()) : null,
+            badgeColor: '#ef4444'
+        },
+        {
             id: 'asr',
             name: '语音识别',
             icon: Mic,
@@ -92,6 +102,14 @@ export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
             name: '方言配置',
             icon: Settings,
             description: '系统设置'
+        },
+        {
+            id: 'leaderboard',
+            name: '排行榜',
+            icon: BarChart3,
+            description: '积分排行与签到',
+            badge: 'New',
+            badgeColor: '#F59E0B'
         },
         {
             id: 'reports',
@@ -249,13 +267,13 @@ export function Sidebar({ currentPage = 'dashboard', onPageChange }) {
                                                     {item.name}
                                                     {item.badge && (
                                                         <span style={{
-                                                            background: 'linear-gradient(135deg, #f97316, #ea580c)',
+                                                            background: item.badgeColor || 'linear-gradient(135deg, #f97316, #ea580c)',
                                                             color: 'white',
                                                             fontSize: '0.6rem',
                                                             fontWeight: 'bold',
                                                             padding: '2px 6px',
-                                                            borderRadius: '4px',
-                                                            animation: 'pulse 2s infinite'
+                                                            borderRadius: item.badgeColor ? '999px' : '4px',
+                                                            animation: item.badgeColor ? 'none' : 'pulse 2s infinite'
                                                         }}>
                                                             {item.badge}
                                                         </span>

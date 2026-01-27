@@ -76,10 +76,19 @@ export default function FollowingPage() {
         }
     };
 
+    const handlePageChange = (pageId) => {
+        if (pageId === 'dashboard') router.push('/dashboard');
+        else if (pageId === 'asr') router.push('/asr_test');
+        else if (pageId === 'community') router.push('/community');
+        else if (pageId === 'settings') router.push('/settings/profile');
+        else if (pageId === 'notifications') router.push('/notifications');
+        else if (pageId === 'leaderboard') router.push('/leaderboard');
+    };
+
     return (
         <div className="page-container">
             <Head><title>关注列表 - 方言宝</title></Head>
-            <Sidebar />
+            <Sidebar onPageChange={handlePageChange} />
             <div className="content">
                 <div className="header">
                     <button onClick={() => router.back()} className="back-btn">← 返回个人主页</button>

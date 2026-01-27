@@ -62,6 +62,19 @@ class FollowService:
                     """, (follower_id,))
                     
                     conn.commit()
+                    
+                    # 发送通知
+                    try:
+                        from .notification_service import NotificationService
+                        NotificationService.create_notification(
+                            user_id=following_id,
+                            type="follow",
+                            actor_id=follower_id,
+                            content="关注了你"
+                        )
+                    except Exception as e:
+                        print(f"Notification error: {e}")
+
                     return True
                 except Exception as e:
                     conn.rollback()

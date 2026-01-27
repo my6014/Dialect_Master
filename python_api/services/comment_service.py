@@ -51,6 +51,7 @@ class CommentService:
                     parent_comment = cur.fetchone()
                     if not parent_comment:
                         return None
+                    parent_author_id = parent_comment[1]
                 
                 # 插入评论
                 cur.execute("""
@@ -78,6 +79,35 @@ class CommentService:
                 author_info = CommentService._get_author_info(cur, user_id)
                 
                 conn.commit()
+                
+                # 发送通知
+                try:
+                    from .notification_service import NotificationService
+                    if parent_id:
+                        # 回复通知
+                        # parent_author_id captured above
+                        if parent_author_id != user_id:
+                            NotificationService.create_notification(
+                                user_id=parent_author_id,
+                                type="reply",
+                                actor_id=user_id,
+                                post_id=post_id,
+                                comment_id=comment_id,
+                                content="回复了你的评论"
+                            )
+                    else:
+                        # 评论帖子通知
+                        if post_author_id != user_id:
+                            NotificationService.create_notification(
+                                user_id=post_author_id,
+                                type="comment",
+                                actor_id=user_id,
+                                post_id=post_id,
+                                comment_id=comment_id,
+                                content="评论了你的帖子"
+                            )
+                except Exception as e:
+                    print(f"Notification error: {e}")
                 
                 return {
                     "id": comment_id,
@@ -402,7 +432,7 @@ class CommentService:
             with conn.cursor() as cur:
                 # 验证评论存在
                 cur.execute("""
-                    SELECT id, likes_count, user_id FROM comments 
+                    SELECT id, likes_count, user_id, post_id FROM comments 
                     WHERE id = %s AND is_deleted = FALSE
                 """, (comment_id,))
                 result = cur.fetchone()
@@ -411,6 +441,7 @@ class CommentService:
                     return None
                 
                 comment_author_id = result[2]
+                post_id = result[3]
                 
                 # 检查是否已点赞
                 cur.execute("""
@@ -458,6 +489,21 @@ class CommentService:
                 
                 conn.commit()
                 
+                # 发送通知
+                if is_liked and comment_author_id != user_id:
+                     try:
+                        from .notification_service import NotificationService
+                        NotificationService.create_notification(
+                            user_id=comment_author_id,
+                            type="like",
+                            actor_id=user_id,
+                            post_id=post_id,
+                            comment_id=comment_id,
+                            content="点赞了你的评论"
+                        )
+                     except Exception as e:
+                        print(f"Notification error: {e}")
+
                 return {
                     "is_liked": is_liked,
                     "likes_count": new_count

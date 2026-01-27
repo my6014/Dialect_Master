@@ -211,10 +211,26 @@ export default function UserProfile() {
 
   const isOwnProfile = currentUser && parseInt(id) === currentUser.id;
 
+  const handlePageChange = (pageId) => {
+    if (pageId === 'dashboard') {
+      router.push('/dashboard');
+    } else if (pageId === 'asr') {
+      router.push('/asr_test');
+    } else if (pageId === 'community') {
+      router.push('/community');
+    } else if (pageId === 'settings') {
+      router.push('/settings/profile');
+    } else if (pageId === 'notifications') {
+      router.push('/notifications');
+    } else if (pageId === 'leaderboard') {
+      router.push('/leaderboard');
+    }
+  };
+
   if (loading) {
     return (
       <div className="profile-container">
-        <Sidebar />
+        <Sidebar onPageChange={handlePageChange} />
         <div className="profile-content">
           <div className="loading-spinner">
             <div className="spinner"></div>
@@ -229,7 +245,7 @@ export default function UserProfile() {
   if (error) {
     return (
       <div className="profile-container">
-        <Sidebar />
+        <Sidebar onPageChange={handlePageChange} />
         <div className="profile-content">
           <div className="error-message">
             <span className="error-icon">😕</span>
@@ -250,7 +266,7 @@ export default function UserProfile() {
       </Head>
 
       <div className="profile-container">
-        <Sidebar />
+        <Sidebar onPageChange={handlePageChange} />
 
         <div className="profile-content">
           {/* 用户头部信息 */}
