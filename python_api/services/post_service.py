@@ -427,6 +427,21 @@ class PostService:
                         PostService._add_user_points(cur, post_author_id, 2, "获得点赞")
                     
                     conn.commit()
+
+                    # 发送通知
+                    if post_author_id != user_id:
+                        try:
+                            from .notification_service import NotificationService
+                            NotificationService.create_notification(
+                                user_id=post_author_id,
+                                type="like",
+                                actor_id=user_id,
+                                post_id=post_id,
+                                content="点赞了你的帖子"
+                            )
+                        except Exception as e:
+                            print(f"Notification error: {e}")
+
                     return {
                         "is_liked": True,
                         "likes_count": new_likes

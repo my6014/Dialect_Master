@@ -36,6 +36,7 @@ export function useUser() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     // 获取用户信息
     const fetchUser = useCallback(async () => {
@@ -74,6 +75,21 @@ export function useUser() {
             setUser(data);
             setIsAuthenticated(true);
             setError(null);
+
+            // 获取未读通知数量
+            try {
+                const notifyRes = await fetch(`${API_BASE}/api/notifications/unread-count`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (notifyRes.ok) {
+                    const notifyData = await notifyRes.json();
+                    setUnreadCount(notifyData.count);
+                }
+            } catch (e) {
+                console.error("获取未读通知失败:", e);
+            }
         } catch (err) {
             console.error('获取用户信息失败:', err);
             setError(err.message);
@@ -144,6 +160,8 @@ export function useUser() {
         loading,
         error,
         isAuthenticated,
+        unreadCount,
+        setUnreadCount,
         logout,
         refreshUser,
         getAvatarUrl,

@@ -7,6 +7,7 @@ import { ConsumptionChart } from '../components/ConsumptionChart';
 import { DemandChart } from '../components/DemandChart';
 import { Badge } from '../components/ui/badge';
 import { useUser } from '../hooks/useUser';
+import { DialectMap } from '../components/DialectMap';
 
 export default function Dashboard() {
     const router = useRouter();
@@ -46,6 +47,10 @@ export default function Dashboard() {
             router.push('/community');
         } else if (pageId === 'settings') {
             router.push('/settings/profile');
+        } else if (pageId === 'notifications') {
+            router.push('/notifications');
+        } else if (pageId === 'leaderboard') {
+            router.push('/leaderboard');
         } else {
             setCurrentPage(pageId);
         }
@@ -133,6 +138,13 @@ export default function Dashboard() {
                     dataMode={dataMode}
                     selectedDevice={selectedDevice}
                 />
+
+
+
+                {/* Dialect Map Section */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <DialectMap />
+                </div>
 
                 {/* Charts Section */}
                 <div style={{

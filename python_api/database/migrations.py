@@ -18,6 +18,7 @@ def run_migrations():
         migrate_create_likes_table(conn)
         migrate_create_follows_table(conn)
         migrate_create_notifications_table(conn)
+        migrate_create_gamification_tables(conn)
         print("[完成] 所有数据库迁移完成")
     finally:
         conn.close()
@@ -291,6 +292,49 @@ def migrate_create_notifications_table(conn):
         
         conn.commit()
         print("[完成] 通知表创建完成")
+
+
+def migrate_create_gamification_tables(conn):
+    """
+    Phase 6: 积分与排行榜 (每日签到、积分流水)
+    """
+    with conn.cursor() as cur:
+        # 1. 签到表
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS user_checkins (
+                id SERIAL PRIMARY KEY,
+                user_id INT REFERENCES users(id) ON DELETE CASCADE,
+                checkin_date DATE NOT NULL,
+                consecutive_days INT DEFAULT 1,
+                points_earned INT DEFAULT 0,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                UNIQUE(user_id, checkin_date)
+            )
+        """)
+        
+        # 2. 积分流水表 (用于统计周榜/月榜)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS points_history (
+                id SERIAL PRIMARY KEY,
+                user_id INT REFERENCES users(id) ON DELETE CASCADE,
+                points INT NOT NULL,
+                reason TEXT,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            )
+        """)
+        
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_points_history_user 
+            ON points_history(user_id, created_at);
+        """)
+        
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS idx_points_history_date
+            ON points_history(created_at);
+        """)
+
+        conn.commit()
+        print("[完成] 积分系统表创建完成")
 
 
 if __name__ == "__main__":

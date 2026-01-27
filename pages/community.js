@@ -176,6 +176,10 @@ export default function Community() {
             // Already on community
         } else if (pageId === 'settings') {
             router.push('/settings/profile');
+        } else if (pageId === 'notifications') {
+            router.push('/notifications');
+        } else if (pageId === 'leaderboard') {
+            router.push('/leaderboard');
         }
     };
 

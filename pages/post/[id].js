@@ -443,6 +443,8 @@ export default function PostDetail() {
         else if (pageId === 'asr') router.push('/asr_test');
         else if (pageId === 'community') router.push('/community');
         else if (pageId === 'settings') router.push('/settings/profile');
+        else if (pageId === 'notifications') router.push('/notifications');
+        else if (pageId === 'leaderboard') router.push('/leaderboard');
     };
 
     // 渲染单个评论
