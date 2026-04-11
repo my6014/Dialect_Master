@@ -6,31 +6,40 @@ import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 
 // Dialect mapping configuration
 const PROVINCE_TO_DIALECT = {
-    '广东省': '粤语',
-    '香港特别行政区': '粤语',
-    '澳门特别行政区': '粤语',
-    '四川省': '四川话',
-    '重庆市': '四川话',
-    '辽宁省': '东北话',
-    '吉林省': '东北话',
-    '黑龙江省': '东北话',
-    '上海市': '上海话',
-    '江苏省': '苏州话', // Simplified
-    '浙江省': '温州话', // Simplified
-    '福建省': '闽南语',
-    '台湾省': '闽南语',
-    '湖南省': '湖南话',
-    '河南省': '河南话',
-    '山东省': '山东话',
-    '陕西省': '陕西话',
-    '湖北省': '武汉话',
-    '天津市': '天津话',
-    '山西省': '山西话',
-    '江西省': '赣语',
-    '安徽省': '客家话', // Very rough approximation for demo
-    '河北省': '方言',
-    '北京市': '北京话',
-    // Add default fallback for others
+    '北京市': '北京官话',
+    '天津市': '天津话（冀鲁/北京官话混合）',
+    '河北省': '冀鲁官话、北京官话、晋语、中原官话',
+    '山西省': '晋语、中原官话',
+    '内蒙古自治区': '晋语、东北官话、蒙古语',
+    '辽宁省': '东北官话、胶辽官话',
+    '吉林省': '东北官话',
+    '黑龙江省': '东北官话',
+    '上海市': '吴语（上海话）',
+    '江苏省': '江淮官话、吴语、中原官话',
+    '浙江省': '吴语、闽语、徽语、官话方言岛',
+    '安徽省': '中原官话、江淮官话、吴语、徽语、赣语',
+    '福建省': '闽语（闽东、闽南、闽北等）、客家话、吴语、赣语',
+    '江西省': '赣语、客家话、江淮官话、西南官话、吴语、徽语',
+    '山东省': '冀鲁官话、中原官话、胶辽官话',
+    '河南省': '中原官话、晋语',
+    '湖北省': '西南官话、江淮官话、赣语',
+    '湖南省': '湘语、西南官话、赣语、客家话',
+    '广东省': '粤语、客家话、闽语（潮汕话、雷州话）',
+    '广西壮族自治区': '西南官话、粤语（白话）、平话、客家话、壮语',
+    '海南省': '闽语（海南话）、粤语、客家话、黎语',
+    '重庆市': '西南官话',
+    '四川省': '西南官话、客家话（少量）',
+    '贵州省': '西南官话',
+    '云南省': '西南官话',
+    '西藏自治区': '藏语、西南官话',
+    '陕西省': '中原官话、晋语、西南官话',
+    '甘肃省': '中原官话、兰银官话',
+    '青海省': '中原官话',
+    '宁夏回族自治区': '兰银官话、中原官话',
+    '新疆维吾尔自治区': '中原官话、兰银官话、维吾尔语',
+    '台湾省': '闽南语、客家话、国语（普通话）、南岛语族语言',
+    '香港特别行政区': '粤语、英语',
+    '澳门特别行政区': '粤语、葡萄牙语'
 };
 
 export function DialectMap() {
@@ -58,10 +67,13 @@ export function DialectMap() {
 
     const onChartClick = (params) => {
         const provinceName = params.name;
-        const dialect = PROVINCE_TO_DIALECT[provinceName];
+        const dialectStr = PROVINCE_TO_DIALECT[provinceName];
 
-        if (dialect) {
-            router.push(`/dialect/${encodeURIComponent(dialect)}`);
+        if (dialectStr) {
+            // If multiple dialects, pick the first one for the redirect
+            // Split by common delimiters like 、 / (
+            const primaryDialect = dialectStr.split(/[、\/\(]/)[0].trim();
+            router.push(`/dialect/${encodeURIComponent(primaryDialect)}`);
         } else {
             // Default to community or show toast? Just go to community for now
             router.push('/community');
